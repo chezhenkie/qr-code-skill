@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 0.8.0 |
+| Version | 0.9.0 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -22,8 +22,9 @@ Goals:
 - G2: an optional viewer page shows the code large enough to scan from a screen.
 - G3: a failed run never prints a path to a broken or absent file.
 - G4: install is a folder copy with no interpreter, package manager or build step on the target.
+- G5: a code that only has to be looked at is shown without writing any file.
 
-Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 0.8.0. Decoding, other symbologies and image input are planned as separate crates after 0.8.0 and the public switch.
+Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 0.9.0. Decoding, other symbologies and image input are planned as separate crates after 0.9.0 and the public switch.
 
 ## 2. Functional requirements
 
@@ -68,7 +69,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | The Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
-| NFR-10 | The Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Measured on the 0.8.0 artifacts: 244736 bytes for `qr.exe`, 648296 for `qr`. |
+| NFR-10 | The Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Measured on the 0.9.0 artifacts: 249856 bytes for `qr.exe`, 657200 for `qr`. |
 | NFR-11 | The build uses one source tree and one version for both binaries, with no per-platform source differences. |
 | NFR-12 | `--term` performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 

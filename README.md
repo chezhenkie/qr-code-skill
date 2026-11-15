@@ -22,8 +22,8 @@ Both samples come from `bin/qr.exe "https://example.com" -o docs/demo-qr.png --s
 | `bin/qr.exe` | Windows console binary |
 | `bin/qr` | Linux x86_64 binary, statically linked |
 | `rust-src/` | The crate: command line, encoder, PNG writer, viewer template |
-| `tools/gate.py` | 36-check acceptance gate over the shipped binary |
-| `tools/argv_matrix.py` | 27-case command-line harness against the frozen fixture |
+| `tools/gate.py` | 47-check acceptance gate over the shipped binary |
+| `tools/argv_matrix.py` | 32-case command-line harness against the frozen fixture |
 | `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
 | `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
 | `docs/` | Process manuals and the sample images |
