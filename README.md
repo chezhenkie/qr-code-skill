@@ -1,6 +1,6 @@
 # qr-code-skill
 
-Offline QR code generator, packaged as an OpenCode skill. This folder is the source of truth; the live install is a copy under `~/.config/opencode/skills\qr`.
+Offline QR code generator shipped as an agent skill: a command-line generator that needs no network, plus a `SKILL.md` an agent host can load. This folder is the source of truth; the copy used here lives under `~/.config/opencode/skills\qr`.
 
 Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 
@@ -25,11 +25,15 @@ The version has one home: `metadata.version` in `SKILL.md` until the port, then 
 
 ## Install
 
+The skill folder holds `SKILL.md` and the generator. Copy both into the skills directory of the host. The path below is OpenCode's on Windows; a host that loads a `SKILL.md` folder needs the same two files, and the generator also runs on its own from a shell.
+
 ```powershell
 Copy-Item .\SKILL.md, .\python\make-qr.py "$env:USERPROFILE\.config\opencode\skills\qr\" -Force
 ```
 
-Reload OpenCode afterwards. The directory name must stay `qr`: the skill id is the folder name, and `SKILL.md` repeats it in the frontmatter.
+Reload the host afterwards. Keep the folder name `qr`: hosts that take the skill id from the folder name, OpenCode among them, read it there, and `SKILL.md` repeats it in the frontmatter.
+
+Without any host: `python python\make-qr.py "https://example.com" -o .\out.png`.
 
 ## Dependency
 
@@ -61,7 +65,7 @@ The Rust line replaces the Python generator at 0.8.0: one console binary for Win
 
 ## Status
 
-2026-11-13: built and gated here, installed at `~/.config/opencode/skills\qr`, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move.
+2026-11-13: built and gated here, installed into the local skills folder, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move.
 
 2026-11-15: put under git and pushed to a private repo. Installed files still hash-equal to the source. Gate passes 15 of 15.
 
