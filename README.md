@@ -54,6 +54,10 @@ The viewer page loads the PNG by file name, scales it to 70% of the viewport, an
 
 A QR that encodes a token, password, or provisioning string is a photographable secret. Create it only when asked, keep it inside the project, delete it after scanning, and never send it to an online decoder.
 
+## Port
+
+The Rust line replaces the Python generator at 2.0.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`.
+
 ## Status
 
 2026-11-13: built and gated here, installed at `~/.config/opencode/skills\qr`, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move. No open defects.
