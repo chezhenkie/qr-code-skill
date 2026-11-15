@@ -90,6 +90,9 @@ jobs:
       - name: gate on the exe
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: python tools/gate.py --target rust-src/target/release/qr.exe
+      - name: differential sweep against the Python line
+        if: hashFiles('python/make-qr.py') != ''
+        run: python tools/diff_python.py --target rust-src/target/release/qr.exe
       - name: cli matrix on the exe
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: python tools/argv_matrix.py --target rust-src/target/release/qr.exe
@@ -139,6 +142,11 @@ jobs:
         run: |
           chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
           python tools/gate.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
+      - name: differential sweep against the Python line
+        if: hashFiles('python/make-qr.py') != ''
+        run: |
+          chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
+          python tools/diff_python.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
       - name: cli matrix on the static binary
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: |
