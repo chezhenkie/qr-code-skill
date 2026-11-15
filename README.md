@@ -1,83 +1,131 @@
-# qr-code-skill
+# QR code
 
-Offline QR code generator shipped as an agent skill: a command-line generator that needs no network, plus a `SKILL.md` an agent host can load. This folder is the source of truth; the copy used here lives under `~/.config/opencode/skills\qr`.
+An agent skill that turns short text or a UTF-8 file into an offline QR code PNG, with an optional viewer page sized for scanning from a phone screen. The generator is a native binary: a Windows console executable and a statically linked Linux x86_64 binary ship in the repository, so the host needs no interpreter, package manager or network access. Error correction is fixed at level M, every symbol is a regular QR code, and the viewer page never contains the encoded text.
 
-Source repo: https://github.com/chezhenkie/qr-code-skill, private. Release v0.8.0: https://github.com/chezhenkie/qr-code-skill/releases/tag/v0.8.0.
+## Samples
 
-## Layout
+Click a sample to open the full-size image.
 
-| Path | What it is |
+| QR code | Viewer page |
+|:---:|---|
+| [<img src="docs/demo-qr.png" width="220" alt="QR code for https://example.com">](docs/demo-qr.png) | [<img src="docs/demo-page.png" width="220" alt="Viewer page with the QR code and its caption">](docs/demo-page.png) |
+| Text input, 25 modules, scale 10 | `--html` page, image at 70vmin |
+
+Both samples come from `bin/qr.exe "https://example.com" -o docs/demo-qr.png --scale 10 --html --title "Scan with the phone camera"`. The caption is a page title and never part of the code.
+
+## Files
+
+| File | Purpose |
 |---|---|
-| `SKILL.md` | Skill contract: frontmatter (`name`, description, license) and the instructions an agent reads. |
-| `bin\qr.exe`, `bin/qr` | The shipped generator: Windows console binary and static Linux x86_64 binary, built from `rust-src\`. |
-| `tools\gate.py` | 36-check acceptance gate over the shipped binary. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
-| `tools\argv_matrix.py` | CLI parity harness: 27 cases frozen in `spec\argv-matrix.json`, normalised for program name and scratch paths. |
-| `tools\diff_python.py` | Differential sweep that compared the Python line with the binary before 0.8.0; kept for a run against history. |
-| `spec\argv-matrix.json` | Frozen CLI surface: exit code, stdout and stderr for each case. |
-| `.github\workflows\ci.yml` | Runs the gate and the CLI matrix on Windows and Linux, builds both binaries, and proves the Linux one runs in Alpine. |
-| `rust-src\` | The crate: CLI, encoder, PNG writer and viewer page. |
-| `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-22, non-functional requirements, interfaces, distribution, states, validation map, gates and open questions. |
-| `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
-| `seed\` | The original Desktop seed (`make-qr.py`, `README.md`, `skill- doc-needs-editing.md`), moved here unedited. Historical only, never a build input. |
-| `CHANGELOG.md` | Version chapters, newest first. |
-| `LICENSE` | MIT. |
-
-The installed skill is `SKILL.md` plus `bin/`. Tools, spec, docs, seed and source folders are never shipped.
-
-The version has one home: `package.version` in `rust-src\Cargo.toml`. `--version` prints it, and the changelog chapter and any later tag derive from it. Current 0.8.0.
+| `SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
+| `bin/qr.exe` | Windows console binary |
+| `bin/qr` | Linux x86_64 binary, statically linked |
+| `rust-src/` | The crate: command line, encoder, PNG writer, viewer template |
+| `tools/gate.py` | 36-check acceptance gate over the shipped binary |
+| `tools/argv_matrix.py` | 27-case command-line harness against the frozen fixture |
+| `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
+| `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
+| `docs/` | Process manuals and the sample images |
+| `seed/` | The original Python script, kept as history |
+| `CHANGELOG.md` | Version history |
 
 ## Install
 
-The skill folder holds `SKILL.md` and `bin/`. Copy both into the skills directory of the host. The path below is OpenCode's on Windows; a host that loads a `SKILL.md` folder needs the same two entries, and the binary also runs on its own from a shell.
+The skill payload is `SKILL.md` and `bin/`. Clone the repository, then copy both into the skills folder for your agent and name the folder `qr`. The folder name must match the `name` in `SKILL.md`.
 
-```powershell
-Copy-Item .\SKILL.md, .\bin "$env:USERPROFILE\.config\opencode\skills\qr\" -Recurse -Force
+```sh
+git clone https://github.com/chezhenkie/qr-code-skill.git
 ```
 
-Reload the host afterwards. Keep the folder name `qr`: hosts that take the skill id from the folder name, OpenCode among them, read it there, and `SKILL.md` repeats it in the frontmatter.
-
-Without any host: `.\bin\qr.exe "https://example.com" -o .\out.png`, or `./bin/qr` on Linux.
-
-## Dependency
-
-Generator: none. The Linux binary is statically linked; the Windows binary uses only libraries that ship with Windows.
-
-Gate only: `Pillow` and `zxing-cpp`, used to decode the produced PNG and compare the text. Neither is needed by the generator. The differential tool also needs the 0.7.1 Python script from git history and `segno`.
-
-## Gate
+| Agent | All projects | One project |
+|---|---|---|
+| OpenCode | `~/.config/opencode/skills` | `.opencode/skills` |
+| Codex | `~/.agents/skills` | `.agents/skills` |
+| Pi | `~/.pi/agent/skills` | `.pi/skills` |
+| OMP | `~/.omp/agent/skills` | `.omp/skills` |
 
 ```powershell
-python tools\gate.py
+Copy-Item -Recurse .\SKILL.md, .\bin "$HOME\.config\opencode\skills\qr"
 ```
 
-Runs `bin\qr.exe` on Windows and `bin/qr` elsewhere; `--target PATH` checks another binary. Covers 36 checks. Input and output: text and file input, exact decode of both, whitespace stripping including the CPython strip set, CRLF fidelity, the two printed paths, overwrite, nested parent creation, and the absolute path. Symbol: level M and a regular symbol for short and long payloads, pixel size at scale 10 and 12, the IEND check on a truncated file. Page: references the PNG, hides the payload, carries the viewport tag, escapes the title and never encodes it. Errors: text plus file, an empty text argument with a file, no source, empty text, oversize input (2331-byte limit at level M), scale 0, border 17, a missing or non-UTF-8 file, and a blocked output or page path. Version: one line on stdout, exit 0.
+```sh
+mkdir -p ~/.config/opencode/skills/qr
+cp -r SKILL.md bin ~/.config/opencode/skills/qr
+```
 
-CI in `.github\workflows\ci.yml` runs this gate and the CLI matrix on Windows and Linux, builds the crate for both targets, and checks the Linux binary with `readelf` and inside an `alpine:3.21` container. Both binaries are built on the runners, so no local Rust toolchain or WSL is needed.
+`~` is your home directory; if the shell does not expand it, use the full path. The [v0.8.0 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v0.8.0) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
 
-## Behaviour
+## Use
 
-Error correction is fixed at M and every symbol is a regular QR code, never Micro QR. `--scale` 1-100 defaults to 10 pixels per module; `--border` 0-16 defaults to 4 quiet-zone modules. `-f` reads UTF-8 without translating line endings, then strips surrounding whitespace. After writing, the binary checks the PNG header against the symbol size and requires the IEND chunk, and removes the file and exits 1 on either failure, so a printed path always points at a complete image of the intended module count. Any filesystem failure ends with one `FAIL read:` or `FAIL write:` line and exit 1, never a traceback. Output paths resolve from the current directory and are printed absolute.
+Ask for the code and name the output file. The agent picks the binary for the platform, runs it and reports the printed path.
 
-The viewer page loads the PNG by file name, scales it to 70vmin (the shorter side of the viewport), and never contains the encoded text.
+```text
+Make a QR code for https://example.com in the project folder.
+Encode notes/token.txt as a QR code with a viewer page for the phone, scale 12.
+```
+
+| Agent | Invocation |
+|---|---|
+| OpenCode | `@qr` |
+| Codex | `$qr` |
+| Pi | `/skill:qr` |
+| OMP | `/skill:qr` |
+
+Direct use, from the repository root:
+
+```powershell
+.\bin\qr.exe "https://example.com" -o .\out.png
+.\bin\qr.exe -f .\notes.txt -o .\notes.png --scale 12 --html --title "notes"
+```
+
+```sh
+./bin/qr "https://example.com" -o ./out.png
+```
+
+Each run prints the absolute path of the PNG on stdout and, with `--html`, the page path after it. Arguments are checked before a file is written. A filesystem failure prints one `FAIL read:` or `FAIL write:` line and exits 1; text beyond the capacity at level M prints one `FAIL store:` line and leaves no file; a usage error prints the help text and exits 2.
+
+## Options
+
+| Option | Meaning | Default |
+|---|---|---|
+| `text` | Text to encode; leave it out when using `-f` | |
+| `-f, --file FILE` | Read the text from a UTF-8 file, line endings kept | |
+| `-o, --out OUT` | PNG path | `qr.png` |
+| `--scale SCALE` | Pixels per module, 1 to 100 | 10 |
+| `--border BORDER` | Quiet zone in modules, 0 to 16 | 4 |
+| `--html` | Write a viewer page beside the PNG, named after it | off |
+| `--title TITLE` | Caption on the viewer page | none |
+| `-h, --help` | Print the usage text | |
+| `--version` | Print the version; the flag is not listed in the help text | |
+
+Text and file input are stripped of surrounding whitespace before encoding. The PNG is written by the tool itself as a 1-bit greyscale image, then the header is checked against the symbol size and the closing chunk is required; a mismatch removes the file and exits 1, so a printed path points at a complete image of the intended module count. The page loads that image by file name, scales it to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.
+
+## Check
+
+Run from the repository root:
+
+```sh
+python tools/gate.py
+python tools/argv_matrix.py
+```
+
+The gate runs 36 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, and a truncated PNG. The matrix compares 27 command-line cases with the frozen fixture. Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing.
+
+CI runs the gate and the matrix on Windows and Linux, builds the crate for both targets, checks that the Linux binary has no dynamic dependency, and runs it on `alpine:3.21`. No local Rust toolchain is needed.
+
+## Limits
+
+- Level M only. Byte mode holds 2331 bytes of text, digits and uppercase fit more; longer input fails with one line.
+- `--scale` accepts 1 to 100 and `--border` 0 to 16. A quiet zone of 4 or more modules scans best.
+- Long text makes a dense symbol, so raise `--scale` for screen scanning. 2331 bytes at scale 100 is 18500 pixels per side.
+- Text is stored as UTF-8. Text that a Shift-JIS encoder would place in kanji mode is written as bytes, so the symbol can need more versions.
+- The viewer page loads the PNG from the same folder; copy both files together.
+- Prebuilt binaries cover Windows x86_64 and Linux x86_64. `cargo` builds other targets from `rust-src/`.
 
 ## Secrets
 
-A QR that encodes a token, password, or provisioning string is a photographable secret. Create it only when asked, keep it inside the project, delete it after scanning, and never send it to an online decoder.
+A QR code that encodes a token or a password is a photographable secret. Generate it on request, keep it inside the project, delete it after scanning, and never send it to an online decoder. Scanner apps keep history, and cloud sync may upload the image.
 
-## Port
+## License
 
-0.8.0 is the Rust line: one crate in `rust-src\`, one console binary for Windows and one statically linked musl binary for Linux, both committed under `bin\` so an install stays a folder copy. Python was the 0.7.1 line; its generator is deleted and git history is the only reference. Behaviour requirements are in `spec\qr-spec.md`; the traps avoided are in `docs\python-to-rust-refactor-pitfalls.md`. The CLI surface is frozen from the binary in `spec\argv-matrix.json`; symbol choice is compared with segno over `spec\corpus.txt` by `tools\parity.py`. One known difference: text that Shift-JIS could encode is written as UTF-8 bytes, so the symbol can be denser; kanji mode is not reproduced.
-
-Before the Python line was deleted, `tools\diff_python.py` ran both implementations over 91 payloads and 9 pages on Windows and Linux: exit codes, printed names, decoded text, PNG dimensions and page bytes matched, and PNG bytes were not compared because the encoders differ.
-
-## Status
-
-2026-11-13: built and gated here, installed into the local skills folder, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move.
-
-2026-11-15: put under git and pushed to a private repo. Installed files still hash-equal to the source. Gate passes 15 of 15.
-
-2026-11-15: process docs, spec sheet, changelog and license added. Layout split into `python\`, `tools\` and `rust-src\`; loose scratch output removed. Version set to 0.7.0, with 0.8.0 reserved for the Rust line.
-
-2026-11-15: 0.7.1 closes the audit findings; the gate passes 35 of 35 and the installed copy is hash-equal to the source.
-
-2026-11-15: 0.8.0 replaces the script with binaries. The gate passes 36 of 36 and the CLI matrix 27 of 27 against both binaries, symbol parity is green, and the differential sweep found no difference before the Python line was removed.
+MIT
