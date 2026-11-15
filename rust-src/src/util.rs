@@ -134,7 +134,7 @@ mod tests {
         assert_eq!(page_path("a.b.c"), "a.b.html");
         assert_eq!(page_path("qr"), "qr.html");
         assert_eq!(page_path(".png"), ".png.html");
-        assert_eq!(page_path("..."), "...html");
+        assert_eq!(page_path("..."), "....html");
         assert_eq!(page_path("dir.d/qr"), "dir.d/qr.html");
     }
 

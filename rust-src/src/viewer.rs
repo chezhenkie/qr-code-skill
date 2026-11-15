@@ -5,23 +5,25 @@ pub fn render(title: &str, png_name: &str) -> String {
     let title = escape(title);
     let png = escape(png_name);
     format!(
-        "<!doctype html>\n\
-<html lang=\"en\">\n\
-<head>\n\
-<meta charset=\"utf-8\">\n\
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-<title>{title}</title>\n\
-<style>\n\
-  body {{ background: #fff; color: #111; font-family: Consolas, monospace; text-align: center; margin: 24px; }}\n\
-  img {{ width: 70vmin; height: 70vmin; image-rendering: pixelated; border: 1px solid #ddd; }}\n\
-  p {{ color: #555; font-size: 14px; }}\n\
-</style>\n\
-</head>\n\
-<body>\n\
-<img src=\"{png}\" alt=\"qr code\">\n\
-<p>{title}</p>\n\
-</body>\n\
-</html>\n"
+        concat!(
+            "<!doctype html>\n",
+            "<html lang=\"en\">\n",
+            "<head>\n",
+            "<meta charset=\"utf-8\">\n",
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
+            "<title>{title}</title>\n",
+            "<style>\n",
+            "  body {{ background: #fff; color: #111; font-family: Consolas, monospace; text-align: center; margin: 24px; }}\n",
+            "  img {{ width: 70vmin; height: 70vmin; image-rendering: pixelated; border: 1px solid #ddd; }}\n",
+            "  p {{ color: #555; font-size: 14px; }}\n",
+            "</style>\n",
+            "</head>\n",
+            "<body>\n",
+            "<img src=\"{png}\" alt=\"qr code\">\n",
+            "<p>{title}</p>\n",
+            "</body>\n",
+            "</html>\n",
+        )
     )
 }
 
