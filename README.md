@@ -10,11 +10,17 @@ Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 |---|---|
 | `SKILL.md` | Skill contract: frontmatter (`name: qr`, description) and the instructions an agent reads. |
 | `make-qr.py` | The generator. Text or file in, PNG out, optional viewer page. |
+| `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-21, non-functional requirements, interfaces, states, validation map, gates and open questions. |
+| `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
 | `gate\gate.py` | 15-check acceptance gate. Rewrites `gate\out` on every run and exits non-zero on any failure. |
 | `gate\out` | Scratch output of the last gate run. Disposable. |
 | `seed\` | The original Desktop seed (`make-qr.py`, `README.md`, `skill- doc-needs-editing.md`), moved here unedited. Historical only; the root copy is current. |
+| `CHANGELOG.md` | Version chapters, newest first. |
+| `LICENSE` | MIT. |
 
 Only `SKILL.md` and `make-qr.py` belong in the installed skill directory. The gate and the seed stay out of it so the skill stays two files.
+
+The version has one home: `metadata.version` in `SKILL.md`. The changelog chapter and any later tag derive from it.
 
 ## Install
 
@@ -53,3 +59,5 @@ A QR that encodes a token, password, or provisioning string is a photographable 
 2026-11-13: built and gated here, installed at `~/.config/opencode/skills\qr`, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move. No open defects.
 
 2026-11-15: put under git and pushed to a private repo. Installed files still hash-equal to the source. Gate passes 15 of 15.
+
+2026-11-15: process docs added under `docs\`; spec sheet, changelog and license added. Version moved to `1.0.0` in `SKILL.md`.

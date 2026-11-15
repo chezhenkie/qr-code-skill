@@ -3,7 +3,7 @@ name: qr
 description: "Generate an offline QR code PNG from text or a file, with an optional local viewer page sized for scanning from a screen. Use when a URL, token, Wi-Fi string, contact card, or other short text must be shown as a QR code or saved as an image, and when generation must stay offline. Not for reading or decoding QR codes."
 license: MIT
 metadata:
-  version: "1.0"
+  version: "1.0.0"
 ---
 
 # QR
