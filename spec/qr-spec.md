@@ -27,6 +27,8 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 
 ## 2. Functional requirements
 
+QR-22 is a target for the 0.8.0 binary. The Python line has no `--version` flag, so the requirement is not claimed for it.
+
 | Id | Required behaviour | Failure behaviour |
 |---|---|---|
 | QR-01 | A single positional argument is encoded unchanged: no strip, no case change, no re-encoding. | none |
