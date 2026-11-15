@@ -9,6 +9,10 @@ REPO = os.path.dirname(TOOLS)
 SCRIPT = os.path.join(REPO, "python", "make-qr.py")
 WORK = os.path.join(TOOLS, ".artifacts")
 PY = sys.executable
+TARGET = None
+if "--target" in sys.argv:
+    TARGET = os.path.abspath(sys.argv[sys.argv.index("--target") + 1])
+COMMAND = [TARGET] if TARGET else [PY, SCRIPT]
 fails = []
 
 try:
@@ -27,7 +31,7 @@ def art(*parts):
 
 
 def run(args, stdin=None):
-    p = subprocess.run([PY, SCRIPT] + args, cwd=WORK, capture_output=True, text=True, stdin=stdin)
+    p = subprocess.run(COMMAND + args, cwd=WORK, capture_output=True, text=True, stdin=stdin)
     return p.returncode, p.stdout.strip(), p.stderr.strip()
 
 
