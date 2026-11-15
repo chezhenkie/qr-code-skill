@@ -42,7 +42,7 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         border,
         html,
         title,
-        term,
+        save,
     } = args;
 
     let data = match file.as_deref() {
@@ -57,7 +57,7 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         return 2;
     }
 
-    if term {
+    if !save {
         let code = match encode_or_fail(&data) {
             Ok(code) => code,
             Err(code) => return code,

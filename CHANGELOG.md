@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.10.0
+
+### New features
+
+#### All platforms
+
+* `--save` writes the PNG at the default path, for a run that wants a file without naming one.
+* `-o`, `--scale`, `--html` and `--title` select save mode, so a script that names a file keeps working.
+
+### Changes
+
+* With no output option the QR code is printed to the terminal and nothing is written to disk.
+* `--term` is removed; the terminal display is the default.
+
 ## 0.9.0
 
 ### New features

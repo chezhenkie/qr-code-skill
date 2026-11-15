@@ -257,7 +257,7 @@ check("png tail detects truncation", size is not None and not complete and full_
 
 term_dir = art("term")
 os.makedirs(term_dir)
-code, out, err = run_bytes(["--term", "ab"], term_dir)
+code, out, err = run_bytes(["ab"], term_dir)
 text = out.decode("utf-8", "replace")
 image, result = term_decode(text)
 check("term exits 0 with no stderr", code == 0 and err == b"", f"{code} {err[:60]!r}")
@@ -276,31 +276,42 @@ check(
 
 zero_dir = art("term-zero")
 os.makedirs(zero_dir)
-code, out, err = run_bytes(["--term", "--border", "0", "ab"], zero_dir)
+code, out, err = run_bytes(["--border", "0", "ab"], zero_dir)
 image, result = term_decode(out.decode("utf-8", "replace"))
 check(
     "term border 0 gives a bare 21-module grid",
-    code == 0 and image is not None and image.width == 21 and result is not None and result.text == "ab",
-    f"{code} {image.size if image else None}",
+    code == 0
+    and image is not None
+    and image.width == 21
+    and result is not None
+    and result.text == "ab"
+    and os.listdir(zero_dir) == [],
+    f"{code} {image.size if image else None} {os.listdir(zero_dir)}",
 )
 
 big_dir = art("term-big")
 os.makedirs(big_dir)
-code, out, err = run_bytes(["--term", "x" * 3000], big_dir)
+code, out, err = run_bytes(["x" * 3000], big_dir)
 check(
     "term oversize writes nothing",
     code == 1 and err.startswith(b"FAIL store") and os.listdir(big_dir) == [],
     f"{code} {err[:60]!r}",
 )
 
-for flag, label in (
-    (["-o", "a.png"], "--out"),
-    (["--html"], "--html"),
-    (["--title", "t"], "--title"),
-    (["--scale", "12"], "--scale"),
-):
-    code, out, err = run(["x", "--term"] + flag)
-    check(f"term rejects {label}", code == 2 and f"drop {label}" in err, f"{code} {err[-70:]}")
+save_dir = art("save")
+os.makedirs(save_dir)
+code, out, err = run_bytes(["--save", "ab"], save_dir)
+saved = sorted(os.listdir(save_dir))
+check(
+    "save writes qr.png and prints the path",
+    code == 0 and saved == ["qr.png"] and out.decode("utf-8").strip().endswith("qr.png"),
+    f"{code} {saved} {out[:60]!r}",
+)
+check(
+    "save writes a decodable PNG",
+    saved == ["qr.png"] and decode(os.path.join(save_dir, "qr.png")) == "ab",
+    str(saved),
+)
 
 code, out, err = run(["--version"])
 check(

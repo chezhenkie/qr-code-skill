@@ -3,7 +3,7 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const USAGE_TAIL: &str =
-    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text]";
+    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text]";
 const WIDTH: usize = 80;
 
 #[derive(Debug, PartialEq)]
@@ -15,7 +15,7 @@ pub struct Args {
     pub border: u32,
     pub html: bool,
     pub title: String,
-    pub term: bool,
+    pub save: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -36,7 +36,7 @@ enum Opt {
     Border,
     Html,
     Title,
-    Term,
+    Save,
 }
 
 impl Opt {
@@ -50,14 +50,14 @@ impl Opt {
             Opt::Border => "--border",
             Opt::Html => "--html",
             Opt::Title => "--title",
-            Opt::Term => "--term",
+            Opt::Save => "--save",
         }
     }
 
     fn takes_value(self) -> bool {
         !matches!(
             self,
-            Opt::Help | Opt::Version | Opt::Html | Opt::Term
+            Opt::Help | Opt::Version | Opt::Html | Opt::Save
         )
     }
 }
@@ -71,7 +71,7 @@ const LONG_OPTIONS: [(&str, Opt); 9] = [
     ("--border", Opt::Border),
     ("--html", Opt::Html),
     ("--title", Opt::Title),
-    ("--term", Opt::Term),
+    ("--save", Opt::Save),
     ("--version", Opt::Version),
 ];
 
@@ -83,7 +83,7 @@ struct State {
     border: i64,
     html: bool,
     title: String,
-    term: bool,
+    save: bool,
     out_given: bool,
     scale_given: bool,
     title_given: bool,
@@ -100,7 +100,7 @@ impl Default for State {
             border: 4,
             html: false,
             title: "qr code".to_string(),
-            term: false,
+            save: false,
             out_given: false,
             scale_given: false,
             title_given: false,
@@ -265,8 +265,8 @@ fn apply(state: &mut State, opt: Opt, value: Option<String>) -> Option<Outcome> 
             state.html = true;
             None
         }
-        Opt::Term => {
-            state.term = true;
+        Opt::Save => {
+            state.save = true;
             None
         }
         Opt::File => {
@@ -332,20 +332,7 @@ fn finish(state: State) -> Outcome {
     if state.file.is_none() && state.text.is_none() {
         return Outcome::Usage("provide text or --file".to_string());
     }
-    if state.term {
-        if state.out_given {
-            return Outcome::Usage("--term writes no file; drop --out".to_string());
-        }
-        if state.html {
-            return Outcome::Usage("--term writes no file; drop --html".to_string());
-        }
-        if state.title_given {
-            return Outcome::Usage("--term writes no file; drop --title".to_string());
-        }
-        if state.scale_given {
-            return Outcome::Usage("--term writes no file; drop --scale".to_string());
-        }
-    }
+    let save = state.save || state.out_given || state.scale_given || state.title_given || state.html;
     Outcome::Run(Args {
         text: state.text,
         file: state.file,
@@ -354,7 +341,7 @@ fn finish(state: State) -> Outcome {
         border: state.border as u32,
         html: state.html,
         title: state.title,
-        term: state.term,
+        save,
     })
 }
 
@@ -403,18 +390,18 @@ pub fn usage(prog: &str) -> String {
 pub fn help(prog: &str) -> String {
     let mut text = usage(prog);
     text.push('\n');
-    text.push_str("Generate an offline QR code PNG or print it to the terminal.\n\n");
+    text.push_str("Generate an offline QR code, printed to the terminal or saved as a PNG.\n\n");
     text.push_str("positional arguments:\n");
     text.push_str("  text             text to encode; omit when using --file\n\n");
     text.push_str("options:\n");
     text.push_str("  -h, --help       show this help message and exit\n");
     text.push_str("  -f, --file FILE  read the text from a file, stripped\n");
-    text.push_str("  -o, --out OUT    output PNG path\n");
-    text.push_str("  --scale SCALE    pixels per module 1-100 (default 10)\n");
+    text.push_str("  -o, --out OUT    save the PNG at this path; implies --save\n");
+    text.push_str("  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n");
     text.push_str("  --border BORDER  quiet zone in modules 0-16 (default 4)\n");
-    text.push_str("  --html           write a viewer page next to the PNG\n");
-    text.push_str("  --title TITLE    viewer page title\n");
-    text.push_str("  --term           print the QR code to the terminal, write no file\n");
+    text.push_str("  --html           write a viewer page next to the PNG; implies --save\n");
+    text.push_str("  --title TITLE    viewer page title; implies --save\n");
+    text.push_str("  --save           write the PNG instead of printing to the terminal\n");
     text
 }
 
@@ -448,7 +435,7 @@ mod tests {
                 assert_eq!(args.border, 4);
                 assert!(!args.html);
                 assert_eq!(args.title, "qr code");
-                assert!(!args.term);
+                assert!(!args.save);
             }
             other => panic!("expected a run, got {:?}", other),
         }
@@ -540,60 +527,53 @@ mod tests {
     #[test]
     fn help_flat_matches_the_frozen_fixture() {
         let flat = help("make-qr.py").split_whitespace().collect::<Vec<_>>().join(" ");
-        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] Generate an offline QR code PNG or print it to the terminal. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT output PNG path --scale SCALE pixels per module 1-100 (default 10) --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG --title TITLE viewer page title --term print the QR code to the terminal, write no file";
+        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] Generate an offline QR code, printed to the terminal or saved as a PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT save the PNG at this path; implies --save --scale SCALE pixels per module 1-100 (default 10); implies --save --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG; implies --save --title TITLE viewer page title; implies --save --save write the PNG instead of printing to the terminal";
         assert_eq!(flat, want);
     }
 
     #[test]
-    fn term_is_a_flag_with_a_quiet_zone() {
-        match parse(&argv(&["x", "--term", "--border", "2"])) {
+    fn the_default_run_prints_to_the_terminal() {
+        match parse(&argv(&["x", "--border", "2"])) {
             Outcome::Run(args) => {
-                assert!(args.term);
+                assert!(!args.save);
                 assert_eq!(args.border, 2);
                 assert_eq!(args.out, "qr.png");
             }
             other => panic!("expected a run, got {:?}", other),
         }
-        match parse(&argv(&["x", "--te"])) {
-            Outcome::Run(args) => assert!(args.term),
+    }
+
+    #[test]
+    fn file_options_select_save_mode() {
+        for items in [
+            vec!["x", "--save"],
+            vec!["x", "-o", "a.png"],
+            vec!["x", "--out=a.png"],
+            vec!["x", "--scale", "12"],
+            vec!["x", "--html"],
+            vec!["x", "--title", "t"],
+        ] {
+            match parse(&argv(&items)) {
+                Outcome::Run(args) => assert!(args.save, "{:?}", items),
+                other => panic!("expected a run for {:?}, got {:?}", items, other),
+            }
+        }
+        match parse(&argv(&["x", "--border", "0"])) {
+            Outcome::Run(args) => assert!(!args.save),
             other => panic!("expected a run, got {:?}", other),
         }
     }
 
     #[test]
-    fn term_refuses_every_output_option() {
+    fn save_and_scale_share_the_s_prefix() {
         assert_eq!(
-            usage_message(&["x", "--term", "-o", "a.png"]),
-            "--term writes no file; drop --out"
+            usage_message(&["x", "--s"]),
+            "ambiguous option: --s could match --scale, --save"
         );
-        assert_eq!(
-            usage_message(&["x", "--term", "--html"]),
-            "--term writes no file; drop --html"
-        );
-        assert_eq!(
-            usage_message(&["x", "--term", "--title", "t"]),
-            "--term writes no file; drop --title"
-        );
-        assert_eq!(
-            usage_message(&["x", "--term", "--scale", "12"]),
-            "--term writes no file; drop --scale"
-        );
-        assert_eq!(
-            usage_message(&["x", "--term", "--out=a.png"]),
-            "--term writes no file; drop --out"
-        );
-    }
-
-    #[test]
-    fn term_still_needs_a_source() {
-        assert_eq!(usage_message(&["--term"]), "provide text or --file");
-    }
-
-    #[test]
-    fn title_and_term_share_the_t_prefix() {
+        assert_eq!(usage_message(&["--save"]), "provide text or --file");
         assert_eq!(
             usage_message(&["x", "--t"]),
-            "ambiguous option: --t could match --title, --term"
+            "argument --title: expected one argument"
         );
     }
 

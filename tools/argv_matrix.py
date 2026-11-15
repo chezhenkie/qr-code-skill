@@ -70,11 +70,9 @@ CASES = [
     {"id": "file-missing", "argv": ["-f", "nope.txt"], "stderr_prefix": "FAIL read:"},
     {"id": "nested-out", "argv": ["x", "-o", "a/b/c.png"]},
     {"id": "html-title", "argv": ["x", "--html", "--title", "a b"]},
-    {"id": "term-text", "argv": ["x", "--term"]},
-    {"id": "term-border-zero", "argv": ["x", "--term", "--border", "0"]},
-    {"id": "term-out", "argv": ["x", "--term", "-o", "a.png"]},
-    {"id": "term-html", "argv": ["x", "--term", "--html"]},
-    {"id": "ambiguous-t", "argv": ["x", "--t"]},
+    {"id": "terminal-border", "argv": ["x", "--border", "0"]},
+    {"id": "save-default", "argv": ["x", "--save"]},
+    {"id": "ambiguous-s", "argv": ["x", "--s"]},
 ]
 
 
