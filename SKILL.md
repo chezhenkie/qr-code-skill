@@ -21,11 +21,11 @@ python -m pip install --user segno
 
 The first command must exit 0; install when it raises `ModuleNotFoundError`.
 
-Tested with segno 1.6.6 on Python 3.14. The script fails with a clear `FAIL store:` line on stderr and exit 1 when the text exceeds the symbol capacity at error level M (byte mode tops out at 2331 bytes; digits and uppercase text fit more).
+Tested with segno 1.6.6 on Python 3.14.6. The script fails with a clear `FAIL store:` line on stderr and exit 1 when the text exceeds the symbol capacity at error level M (byte mode tops out at 2331 bytes; digits and uppercase text fit more).
 
 ## Usage
 
-Run from this skill directory, or call the script through its absolute path. Output paths resolve from the current directory.
+In the installed skill, run from the folder that holds this file, or call the script through its absolute path. Output paths resolve from the current directory.
 
 ```powershell
 python make-qr.py "https://example.com" -o .\qr\out.png
@@ -39,11 +39,11 @@ python make-qr.py -f .\secret.txt -o .\qr\secret.png --scale 12 --html --title "
 - `--html` writes a viewer page next to the PNG, named after it, and prints its absolute path on stdout after the PNG path.
 - `--title` sets the viewer caption only; it is never encoded.
 
-Error correction is fixed at level M. The viewer page loads the image by file name, scales it to 70% of the viewport, and never contains the encoded text.
+Error correction is fixed at level M. The viewer page loads the image by file name, scales it to 70vmin (the shorter side of the viewport), and never contains the encoded text.
 
 ## Contract
 
-The script checks the written PNG against the symbol size before it prints anything and removes the file and exits 1 on a mismatch, so a printed path is always a complete image of the intended module count. Arguments are validated before any file is written.
+The script checks the written PNG against the symbol size before it prints anything and removes the file and exits 1 on a mismatch, so a printed path always matches the intended module count. Arguments are validated before any file is written.
 
 ## Placement
 

@@ -43,7 +43,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
 | QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size. | on mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>` |
 | QR-14 | stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output on any path |
-| QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by file name; it contains no payload text, no script and no external asset; the image is scaled to 70% of the smaller viewport side. | QR-19 |
+| QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by file name; it contains no payload text, no script and no external asset; the image is scaled to 70vmin, the shorter side of the viewport. | QR-19 |
 | QR-16 | `--title` sets the page title and caption only, HTML-escaped, and is never encoded. | none; any string is accepted |
 | QR-17 | Exit 0 on success, 1 on a runtime failure, 2 on a usage error. | n/a |
 | QR-18 | An existing output file is replaced. | QR-19 |
@@ -54,19 +54,21 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 
 ## 3. Non-functional requirements
 
+Requirements marked 0.8.0 are targets for the Rust line and are not claimed for the Python line.
+
 | Id | Requirement |
 |---|---|
 | NFR-01 | No network at runtime: no socket, DNS or HTTP. |
-| NFR-02 | The generator needs no interpreter or package at runtime; the gate's dependencies stay in the gate. |
+| NFR-02 | From 0.8.0 the generator needs no interpreter or package at runtime; until then it needs CPython 3.14 and segno. The gate's dependencies stay in the gate. |
 | NFR-03 | Repository text is ASCII with LF endings; generated images and gate scratch are not committed. |
 | NFR-04 | One PNG of a URL of 60 characters completes in under 1 s on the reference machine. Guess, to be measured at the port. |
 | NFR-05 | Peak memory stays under 16 MiB for a 2000-byte payload. Guess, to be measured. |
 | NFR-06 | Windows x86_64 and Linux x86_64 behave identically for file output, exit codes and file names. |
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
-| NFR-09 | The Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
-| NFR-10 | The Windows binary starts with no runtime redistributable and no console flash rule applies. Size under 4 MB per binary. Guess, to be measured. |
-| NFR-11 | The build uses one source tree and one version for both binaries; no per-platform source differences. |
+| NFR-09 | From 0.8.0 the Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
+| NFR-10 | From 0.8.0 the Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Guess, to be measured. |
+| NFR-11 | From 0.8.0 the build uses one source tree and one version for both binaries, with no per-platform source differences. |
 
 ## 4. Architecture
 
@@ -187,7 +189,7 @@ Acceptance criteria for the port: the gate passes with the Rust binary in place 
 
 Port increments, each closing at Gate 2:
 
-1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: the 28-case argv matrix matches on rc and stderr, and every fixture decodes to the same payload at the same dimensions.
+1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: the argv matrix matches on rc and stderr, and every fixture decodes to the same payload at the same dimensions.
 2. P2: viewer page parity. Gate: the page is byte-equal to the Python output for the same title and PNG stem.
 3. P3: packaging. One crate in `rust-src\` builds both targets: Windows console build and musl static build, committed under `bin\`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
 4. P4: differential harness in the gate. Gate: the full fixture sweep is green on Windows and Linux, and the gate keeps its Python dependency set.
@@ -220,3 +222,4 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | Console subsystem on Windows | a shell must wait for the exit code and capture both streams |
 | 2026-11-15 | PNG compared by decode and dimensions, not by hash | two encoders produce different bytes for the same symbol |
 | 2026-11-15 | One folder per language: `python\`, `rust-src\`, with tools in `tools\`; `temp\` and `logs\` ignored | the root stays readable and each language has one home |
+| 2026-11-15 | For 0.7.0 the version home is `metadata.version` in SKILL.md, because the line has no build manifest; from 0.8.0 the manifest rule applies | the manual asks for one home, and a script has no manifest yet |

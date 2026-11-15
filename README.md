@@ -47,9 +47,9 @@ Covers: text and file input, exact decode of both, whitespace stripping, the two
 
 ## Behaviour
 
-Error correction is fixed at M. `--scale` 1-100 defaults to 10 pixels per module; `--border` 0-16 defaults to 4 quiet-zone modules. After writing, the script checks the PNG header against the symbol size, removes the file and exits 1 on a mismatch, so a printed path is always a complete image. Output paths resolve from the current directory and are printed absolute.
+Error correction is fixed at M. `--scale` 1-100 defaults to 10 pixels per module; `--border` 0-16 defaults to 4 quiet-zone modules. After writing, the script checks the PNG header against the symbol size, removes the file and exits 1 on a mismatch, so a printed path always matches the intended module count. Output paths resolve from the current directory and are printed absolute.
 
-The viewer page loads the PNG by file name, scales it to 70% of the viewport, and never contains the encoded text.
+The viewer page loads the PNG by file name, scales it to 70vmin (the shorter side of the viewport), and never contains the encoded text.
 
 ## Secrets
 
