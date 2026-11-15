@@ -40,7 +40,7 @@ Without any host: `.\bin\qr.exe "https://example.com" -o .\out.png`, or `./bin/q
 
 ## Dependency
 
-Generator: none. The binary statically links its dependencies; the Linux build carries no dynamic loader dependency.
+Generator: none. The Linux binary is statically linked; the Windows binary uses only libraries that ship with Windows.
 
 Gate only: `Pillow` and `zxing-cpp`, used to decode the produced PNG and compare the text. Neither is needed by the generator. The differential tool also needs the 0.7.1 Python script from git history and `segno`.
 

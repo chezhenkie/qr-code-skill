@@ -177,7 +177,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-14 | gate stdout | `two paths png then html` |
 | QR-15 | gate page inspection | `viewer references png`, `viewer hides text`, `viewport tag present` |
 | QR-16 | gate page inspection | `title escaped in page`, `title never encoded` |
-| QR-17 | exit code asserted in every check | all 35 |
+| QR-17 | exit code asserted in every check | all 36 |
 | QR-18 | gate decode after a rewrite | `overwrite replaces the file` |
 | QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write` |
 | QR-20 | gate exit code | `help exits 0` |
@@ -203,7 +203,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 
 Port increments, each closing at Gate 2:
 
-1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate met: `tools\argv_matrix.py` 27 of 27 on both binaries, fixture payloads decode at the same dimensions, and the gate passes 36 of 36 on the built binary.
+1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate met: `tools\argv_matrix.py` 27 of 27 on both binaries and the gate passes 36 of 36 on the built binary.
 2. P2: viewer page parity. Gate met: page bytes equal over nine titles and names, including escaping, an empty title and control characters.
 3. P3: packaging. Gate met: both binaries committed under `bin\`, a scratch folder with `SKILL.md` and `bin` runs, `readelf` shows no `NEEDED`, the `alpine:3.21` job runs the static binary, sizes are 244736 and 648296 bytes, and the Python generator is deleted.
 4. P4: differential harness. Gate met by the pre-deletion sweep: 91 payloads and 9 pages on Windows and Linux, with no difference in exit code, printed names, decoded text, dimensions or page bytes. The tool stays in `tools\`; it is not a permanent CI job because the reference is gone.
@@ -218,7 +218,7 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | OQ-2 | Closed 2026-11-15: after the port the version lives in `rust-src\Cargo.toml` alone, SKILL.md carries no second number, and `--version` prints the manifest value. | maintainer | none |
 | OQ-3 | Closed 2026-11-15: stdout and stderr are UTF-8 on every platform. The ANSI codepage on Windows is a property of the Python line and is not reproduced; the differential harness compares message streams as text and file bytes exactly. | maintainer | none |
 | OQ-4 | Closed 2026-11-15: the gate stays in Python on the development machine, is not shipped and does not run on Alpine. | maintainer | none |
-| OQ-5 | Closed 2026-11-15: Alpine verification runs in GitHub Actions. The workflow checks `bin/qr` with `readelf` for a NEEDED entry and runs it in an `alpine:3.21` container, then replays the CLI matrix against the static binary. No local Docker or chroot is needed, and WSL stays a development environment for rustc. | maintainer | none |
+| OQ-5 | Closed 2026-11-15: Alpine verification runs in GitHub Actions. The workflow checks `bin/qr` with `readelf` for a NEEDED entry and runs it in an `alpine:3.21` container, then replays the CLI matrix against the static binary. No local Docker, Rust toolchain or WSL is needed. | maintainer | none |
 
 ## 12. Decision history
 

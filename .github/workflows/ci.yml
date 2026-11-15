@@ -50,6 +50,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      - run: python -m pip install segno
       - if: hashFiles('rust-src/Cargo.toml') == ''
         run: echo "rust-src is not committed yet, skipping"
       - name: segno table
