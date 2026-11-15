@@ -27,6 +27,13 @@ def decode(path):
     return r.text if r else None
 
 
+def ec_level(path):
+    import zxingcpp
+    from PIL import Image
+    r = zxingcpp.read_barcode(Image.open(path))
+    return r.ec_level if r else None
+
+
 def check(name, cond, detail=""):
     print(("PASS " if cond else "FAIL ") + name + ("" if cond else " :: " + detail))
     if not cond:
@@ -69,6 +76,33 @@ check("rejects empty text", code == 2 and "empty input" in err, f"{code} {err[-6
 
 code, out, err = run(["x" * 3000, "-o", "huge.png"])
 check("rejects oversize", code == 1 and err.startswith("FAIL store") and not os.path.exists(os.path.join(WORK, "huge.png")), f"{code} {err[:80]}")
+
+code, out, err = run(["", "-f", "secret.txt", "-o", "emptyboth.png"])
+check("rejects empty text with file", code == 2 and "not both" in err, f"{code} {err[-60:]}")
+
+short = "ab"
+code, out, err = run([short, "-o", "short.png"])
+short_path = os.path.join(WORK, "short.png")
+check("short payload regular 21 modules", code == 0 and Image.open(short_path).width == 290 and decode(short_path) == short, f"{code} {err}")
+check("short payload level M", ec_level(short_path) == "M", str(ec_level(short_path)))
+
+url19 = "https://example.com"
+code, out, err = run([url19, "-o", "url19.png"])
+check("url level M not boosted", code == 0 and ec_level(os.path.join(WORK, "url19.png")) == "M", str(ec_level(os.path.join(WORK, "url19.png"))))
+
+check("viewport tag present", 'name="viewport"' in page, page[:120])
+
+import importlib.util  # noqa: E402
+
+spec = importlib.util.spec_from_file_location("make_qr", SCRIPT)
+make_qr = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(make_qr)
+trunc = os.path.join(WORK, "trunc.png")
+with open(os.path.join(WORK, "plain.png"), "rb") as src, open(trunc, "wb") as dst:
+    dst.write(src.read(100))
+size, complete = make_qr.png_probe(trunc)
+full_size, full_complete = make_qr.png_probe(os.path.join(WORK, "plain.png"))
+check("png tail detects truncation", size is not None and not complete and full_complete, f"{size} {complete} {full_complete}")
 
 code, out, err = run(["x", "--scale", "0", "-o", "bad.png"])
 check("rejects scale 0", code == 2 and "--scale must be 1-100" in err, f"{code} {err[-60:]}")

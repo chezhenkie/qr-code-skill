@@ -41,7 +41,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 | QR-10 | Error correction is fixed at level M and is not selectable. Symbols are regular QR, never Micro QR. | no option exists |
 | QR-11 | A payload over the capacity of level M fails without leaving a file. | exit 1, stderr starts `FAIL store:` |
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
-| QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size. | on mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>` |
+| QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size, and the file must end with an IEND chunk. | on a size mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>`; without IEND the file is removed, exit 1, stderr `FAIL png tail: missing IEND` |
 | QR-14 | stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output on any path |
 | QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by file name; it contains no payload text, no script and no external asset; the image is scaled to 70vmin, the shorter side of the viewport. | QR-19 |
 | QR-16 | `--title` sets the page title and caption only, HTML-escaped, and is never encoded. | none; any string is accepted |

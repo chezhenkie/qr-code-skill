@@ -16,6 +16,7 @@ VIEWER = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <style>
   body {{ background: #fff; color: #111; font-family: Consolas, monospace; text-align: center; margin: 24px; }}
@@ -33,12 +34,26 @@ VIEWER = """<!doctype html>
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
-def png_size(path: str):
+def png_probe(path: str):
+    """Return (IHDR size or None, whether the file ends with an IEND chunk)."""
     with open(path, "rb") as handle:
         head = handle.read(24)
+        end = os.fstat(handle.fileno()).st_size
+        tail = b""
+        if end >= 12:
+            handle.seek(end - 12)
+            tail = handle.read(12)
+    complete = len(tail) == 12 and tail[4:8] == b"IEND"
     if len(head) < 24 or head[:8] != PNG_SIGNATURE or head[12:16] != b"IHDR":
-        return None
-    return struct.unpack(">II", head[16:24])
+        return None, complete
+    return struct.unpack(">II", head[16:24]), complete
+
+
+def discard(path: str) -> None:
+    try:
+        os.remove(path)
+    except OSError:
+        pass
 
 
 def main() -> int:
@@ -56,7 +71,7 @@ def main() -> int:
         parser.error("--scale must be 1-100")
     if not 0 <= args.border <= 16:
         parser.error("--border must be 0-16")
-    if args.file and args.text:
+    if args.file and args.text is not None:
         parser.error("give text or --file, not both")
     if args.file:
         with open(args.file, "r", encoding="utf-8") as handle:
@@ -73,17 +88,21 @@ def main() -> int:
     if parent:
         os.makedirs(parent, exist_ok=True)
     try:
-        code = segno.make(data, error="m")
+        code = segno.make(data, error="m", boost_error=False, micro=False)
         code.save(out, scale=args.scale, border=args.border)
     except (DataOverflowError, ValueError) as exc:
         print(f"FAIL store: {exc}", file=sys.stderr)
         return 1
 
     want = code.symbol_size(scale=args.scale, border=args.border)
-    got = png_size(out)
+    got, complete = png_probe(out)
     if got != want:
-        os.remove(out)
+        discard(out)
         print(f"FAIL png size {got} expected {want}", file=sys.stderr)
+        return 1
+    if not complete:
+        discard(out)
+        print("FAIL png tail: missing IEND", file=sys.stderr)
         return 1
     print(out)
 
