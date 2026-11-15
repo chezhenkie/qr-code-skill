@@ -46,6 +46,16 @@ The binary checks the written PNG header against the symbol size and requires th
 
 Write the PNG into the project being worked on, for example `qr\` in the project root. Do not write to a system temp directory or the Desktop.
 
+## Exit and cleanup
+
+The generator writes at most two files, both at the paths you choose: the PNG from `-o` and, with `--html`, the page beside it. It keeps no temporary copy, cache or log, so nothing else on disk holds the code.
+
+- Exit 0: the absolute paths are printed and the PNG passed the size and IEND check.
+- Exit 1: one `FAIL` line on stderr. A payload over capacity writes nothing, a failed write or PNG check removes the PNG, and a failed page write leaves the PNG for a retry.
+- Exit 2: usage error, nothing written.
+
+Nothing removes the files automatically. After the scan, delete the PNG and the page: `Remove-Item .\qr\out.png, .\qr\out.html` on Windows, `rm qr/out.png qr/out.html` on Linux. Delete a secret as soon as the scan is confirmed, without copying the files elsewhere first. A process stopped mid-write can leave a partial PNG at the output path; delete that path as well.
+
 ## Secrets
 
 A QR that encodes a token, password, or provisioning string is a photographable secret. Create it only when asked, keep it inside the project, and delete it after it is scanned; scanner apps keep history and cloud sync may upload it. Never send such an image to an online decoder.

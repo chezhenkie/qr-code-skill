@@ -100,6 +100,20 @@ Each run prints the absolute path of the PNG on stdout and, with `--html`, the p
 
 Text and file input are stripped of surrounding whitespace before encoding. The PNG is written by the tool itself as a 1-bit greyscale image, then the header is checked against the symbol size and the closing chunk is required; a mismatch removes the file and exits 1, so a printed path points at a complete image of the intended module count. The page loads that image by file name, scales it to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.
 
+## Cleanup
+
+The generator writes only the files you name: the PNG at `-o` and, with `--html`, the page beside it. It uses no temporary folder, cache or log, so no QR image is left anywhere else on disk.
+
+```powershell
+Remove-Item .\qr\out.png, .\qr\out.html
+```
+
+```sh
+rm qr/out.png qr/out.html
+```
+
+Deletion is a manual step; nothing removes the files later. A payload over capacity writes nothing, a failed write or PNG check removes the PNG, and a failed page write leaves the PNG so the run can be retried. Delete a secret as soon as the scan is confirmed, without copying it elsewhere first.
+
 ## Check
 
 Run from the repository root:
@@ -109,7 +123,7 @@ python tools/gate.py
 python tools/argv_matrix.py
 ```
 
-The gate runs 36 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, and a truncated PNG. The matrix compares 27 command-line cases with the frozen fixture. Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing.
+The gate runs 36 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, and a truncated PNG. The matrix compares 27 command-line cases with the frozen fixture. Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing. Both tools write their fixtures under `tools/.artifacts` and delete them on exit.
 
 CI runs the gate and the matrix on Windows and Linux, builds the crate for both targets, checks that the Linux binary has no dynamic dependency, and runs it on `alpine:3.21`. No local Rust toolchain is needed.
 
