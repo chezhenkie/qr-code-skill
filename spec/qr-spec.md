@@ -30,7 +30,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 | Id | Required behaviour | Failure behaviour |
 |---|---|---|
 | QR-01 | A single positional argument is encoded unchanged: no strip, no case change, no re-encoding. | none |
-| QR-02 | `-f PATH` reads the file as UTF-8 and strips leading and trailing whitespace before encoding. | QR-19 |
+| QR-02 | `-f PATH` reads the file as UTF-8, without line-ending translation, and strips leading and trailing whitespace before encoding. The whitespace set is CPython's, measured on 3.14.6: U+0009 to U+000D, U+001C to U+0020, U+0085, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, 29 code points in 10 ranges. Rust `str::trim` follows Unicode White_Space and keeps U+001C to U+001F, so the port carries this table. | QR-19 |
 | QR-03 | Text and `-f` are mutually exclusive. | exit 2, stderr `give text or --file, not both`, nothing written |
 | QR-04 | Neither text nor `-f` is given. | exit 2, stderr `provide text or --file`, nothing written |
 | QR-05 | The payload is empty, either as an empty argument or a file that strips to nothing. | exit 2, stderr `empty input`, nothing written |
@@ -150,8 +150,8 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 - The post-write check reads the PNG header only. QR-13 is a header check, not a full decode; decode evidence comes from the gate.
 - The Rust encoder must be pure Rust with no C dependency, so the musl build stays static and cross-compiles without a C toolchain for the target. The crate is chosen in P1 and recorded in the decision history.
 - Port constraints, taken from `docs/python-to-rust-refactor-pitfalls.md`:
-  - Applies: section 6 (Result branches instead of `unwrap`), section 7 (release profile, `overflow-checks` if arithmetic is added), section 10 (argv parity, path derivation, stdout encoding), section 11 (console subsystem choice), and section 12 (checklist and golden differential test).
-  - Does not apply, with reason: section 1 (the program writes one file once, there is no loop of small writes), section 2 (no string building in a loop), section 3 (no per-iteration allocation in application code), section 4 (no bignum arithmetic), section 5 (UTF-8 handling is one decode at the input boundary), section 8 (no character classes, regex or line splitting), section 9 (no decode chain with error handlers).
+  - Applies: section 5 (one strict UTF-8 read, invalid input to `FAIL read`, no lossy path), section 6 (Result branches instead of `unwrap`), section 7 (release profile, `overflow-checks` if arithmetic is added), section 8 (the `-f` strip set only), section 10 (argv parity, path derivation, stdout encoding), section 11 (console subsystem choice), and section 12 (checklist and golden differential test).
+  - Does not apply, with reason: section 1 (the program writes one file once, there is no loop of small writes), section 2 (no string building in a loop), section 3 (no per-iteration allocation in application code), section 4 (no bignum arithmetic), section 9 (no decode chain with error handlers).
   - A mechanical port must not add buffering, tables or decoders that the behaviour does not need.
 - The port keeps the same message text and exit codes; deviations need a recorded decision.
 
@@ -160,7 +160,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | Requirement | Method | Evidence today |
 |---|---|---|
 | QR-01, QR-12 | gate decode | `decode matches` |
-| QR-02 | gate decode | `file exit 0`, `strips file whitespace` |
+| QR-02 | gate decode | `file exit 0`, `strips file whitespace`, `strip set boundary` |
 | QR-03 | gate exit code | `rejects text plus file` |
 | QR-05 | gate exit code | `rejects empty text` |
 | QR-06 | gate stdout | `prints one absolute path` |
@@ -224,3 +224,4 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | One folder per language: `python\`, `rust-src\`, with tools in `tools\`; `temp\` and `logs\` ignored | the root stays readable and each language has one home |
 | 2026-11-15 | For 0.7.0 the version home is `metadata.version` in SKILL.md, because the line has no build manifest; from 0.8.0 the manifest rule applies | the manual asks for one home, and a script has no manifest yet |
 | 2026-11-15 | Regular QR only; Micro QR is never emitted | scanner support varies, and the common pure-Rust encoders do not emit Micro QR, so one symbol family keeps parity |
+| 2026-11-15 | The `-f` strip set is CPython's measured 10-range set, carried into the port as a table, not replaced by Rust `trim` | a patch release must not change the payload, and `trim` keeps U+001C to U+001F that CPython strips |

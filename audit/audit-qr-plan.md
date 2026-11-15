@@ -1,6 +1,6 @@
 # Audit plan: qr skill 0.7.1
 
-Triaged from `audit/audit-qr-code.md`. Accepted items only. One item per change, each with the files it touches, the test that fails when the change is reverted, and the risk of doing it.
+Triaged from `audit/audit-qr-code.md`. Accepted items only. One item per change, each with the files it touches, the test that fails when the change is reverted, and the risk of doing it. P-12 comes from reading `docs/python-to-rust-refactor-pitfalls.md` against the spec, not from the audit.
 
 Scope of the release: fixes and tests on the Python line. No feature work. Version is a patch bump to 0.7.1.
 
@@ -19,6 +19,7 @@ Scope of the release: fixes and tests on the Python line. No feature work. Versi
 | P-09 | Gate hygiene: single `os.makedirs`, `shutil` at the top, drop the redundant `"tk_"` condition, and name a missing decoder dependency then exit 2. | `tools/gate.py:12-36, 55` | Gate run; a decoder import failure prints one line instead of a traceback. | None. |
 | P-10 | Align the text: fixed-M wording where it still says boosted, the regular-QR rule, the line-ending rule for `-f`, the viewport, the raster limit note, the `.png` extension note, and a README status line that no longer claims zero defects. Update the spec validation map and the decision history. | `SKILL.md`, `README.md`, `CHANGELOG.md`, `spec/qr-spec.md` | The doc sweep: paths resolve, counts match the gate, version fields agree. | None. |
 | P-11 | Version 0.7.1 in its single home, a 0.7.1 changelog chapter: fixes only. Resync the install and record the hashes. | `SKILL.md`, `CHANGELOG.md`, install folder | Hashes match; `python tools\gate.py` green. | None. |
+| P-12 | Pin the `-f` strip set to CPython's measured 10-range set and gate it: a file holding `a` wrapped in U+001C and U+001F decodes back as `a`, and the same bytes inside the payload are kept. | `spec/qr-spec.md`, `tools/gate.py` | The gate check. It passes on the Python line today and fails a 1:1 Rust `trim` port. | One more check to keep green in P-07's rework. |
 
 ## Rejected
 
@@ -38,7 +39,7 @@ Scope of the release: fixes and tests on the Python line. No feature work. Versi
 
 1. P-04, P-01, P-05, P-06: generator contract, each with its gate check.
 2. P-02, P-03: error paths, each with its gate check.
-3. P-07, P-08, P-09: gate coverage and hygiene.
+3. P-07, P-08, P-09, P-12: gate coverage and hygiene.
 4. P-10: text alignment.
 5. P-11: version, changelog, install sync.
 6. Gate green, install hashes recorded, push.
