@@ -12,6 +12,7 @@ Usage:
   python tools/argv_matrix.py --freeze                rewrite the fixture from the shipped binary
   python tools/argv_matrix.py --freeze --target PATH  rewrite it from another binary
 """
+import atexit
 import json
 import os
 import re
@@ -23,6 +24,19 @@ TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
 FIXTURE = os.path.join(REPO, "spec", "argv-matrix.json")
 WORK = os.path.join(TOOLS, ".artifacts", "matrix")
+
+
+def cleanup():
+    shutil.rmtree(WORK, ignore_errors=True)
+    parent = os.path.dirname(WORK)
+    try:
+        if not os.listdir(parent):
+            os.rmdir(parent)
+    except OSError:
+        pass
+
+
+atexit.register(cleanup)
 
 
 def default_target():

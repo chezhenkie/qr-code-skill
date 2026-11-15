@@ -13,6 +13,7 @@ The Python reference is removed at 0.8.0. This tool is the acceptance step
 before that, not a permanent CI job; needs Pillow, zxing-cpp and segno.
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
@@ -24,6 +25,19 @@ import zxingcpp
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
 WORK = os.path.join(TOOLS, ".artifacts", "diff")
+
+
+def cleanup():
+    shutil.rmtree(WORK, ignore_errors=True)
+    parent = os.path.dirname(WORK)
+    try:
+        if not os.listdir(parent):
+            os.rmdir(parent)
+    except OSError:
+        pass
+
+
+atexit.register(cleanup)
 PY_SCRIPT = os.path.join(REPO, "python", "make-qr.py")
 CORPUS = os.path.join(REPO, "spec", "corpus.txt")
 EXTRA_PAYLOADS = [
@@ -65,8 +79,14 @@ def fresh(name):
 
 
 def decode(path):
-    result = zxingcpp.read_barcode(Image.open(path))
+    with Image.open(path) as image:
+        result = zxingcpp.read_barcode(image)
     return result.text if result else None
+
+
+def image_size(path):
+    with Image.open(path) as image:
+        return image.size
 
 
 def report(name, ok, detail=""):
@@ -98,11 +118,11 @@ def compare_payload(python, target, index, payload):
         return report(f"payload {index}", False, "printed paths differ")
     py_png = os.path.join(py_dir, "out.png")
     rs_png = os.path.join(rs_dir, "out.png")
-    if Image.open(py_png).size != Image.open(rs_png).size:
+    if image_size(py_png) != image_size(rs_png):
         return report(
             f"payload {index}",
             False,
-            f"size {Image.open(py_png).size} vs {Image.open(rs_png).size}",
+            f"size {image_size(py_png)} vs {image_size(rs_png)}",
         )
     py_text = decode(py_png)
     rs_text = decode(rs_png)

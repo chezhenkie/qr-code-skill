@@ -3,6 +3,7 @@
 Runs bin\qr.exe on Windows and bin/qr elsewhere, or the binary given with
 --target. Needs zxing-cpp and Pillow to decode the produced PNGs.
 """
+import atexit
 import os
 import re
 import shutil
@@ -36,6 +37,7 @@ except ImportError as exc:
 
 shutil.rmtree(WORK, ignore_errors=True)
 os.makedirs(WORK, exist_ok=True)
+atexit.register(shutil.rmtree, WORK, ignore_errors=True)
 
 
 def art(*parts):
@@ -63,7 +65,13 @@ def png_probe(path):
 
 
 def barcode(path):
-    return zxingcpp.read_barcode(Image.open(path))
+    with Image.open(path) as image:
+        return zxingcpp.read_barcode(image)
+
+
+def image_size(path):
+    with Image.open(path) as image:
+        return image.size
 
 
 def decode(path):
@@ -103,14 +111,15 @@ paths = out.splitlines()
 check("file exit 0", code == 0, err)
 check("two paths png then html", len(paths) == 2 and paths[0].endswith(".png") and paths[1].endswith(".html"), out)
 check("strips file whitespace", decode(art("deep", "secret.png")) == secret, str(decode(art("deep", "secret.png"))))
-page = open(art("deep", "secret.html"), encoding="utf-8").read()
+with open(art("deep", "secret.html"), encoding="utf-8") as fh:
+    page = fh.read()
 check("viewer references png", 'src="secret.png"' in page, page[:80])
 check("viewer hides text", secret not in page, "text leaked")
 
-img = Image.open(art("deep", "secret.png"))
-check("scale 12 pixels", img.width == img.height and img.width % 12 == 0, f"{img.width}x{img.height}")
-img = Image.open(art("plain.png"))
-check("default scale 10 pixels", img.width == img.height and img.width % 10 == 0, f"{img.width}x{img.height}")
+w, h = image_size(art("deep", "secret.png"))
+check("scale 12 pixels", w == h and w % 12 == 0, f"{w}x{h}")
+w, h = image_size(art("plain.png"))
+check("default scale 10 pixels", w == h and w % 10 == 0, f"{w}x{h}")
 
 code, out, err = run(["x", "-f", "secret.txt", "-o", "both.png"])
 check("rejects text plus file", code == 2 and "not both" in err, f"{code} {err[-60:]}")
@@ -129,7 +138,7 @@ check("rejects empty text with file", code == 2 and "not both" in err, f"{code} 
 
 short = "ab"
 code, out, err = run([short, "-o", "short.png"])
-check("short payload regular 21 modules", code == 0 and Image.open(art("short.png")).width == 290 and decode(art("short.png")) == short, f"{code} {err}")
+check("short payload regular 21 modules", code == 0 and image_size(art("short.png"))[0] == 290 and decode(art("short.png")) == short, f"{code} {err}")
 check("short payload level M", ec_level(art("short.png")) == "M", str(ec_level(art("short.png"))))
 
 url19 = "https://example.com"
@@ -153,7 +162,8 @@ check("strip set boundary", code == 0 and inner_code == 0 and payload(art("strip
 
 title = '<b>&"x"</b>'
 code, out, err = run([secret, "-o", "titled.png", "--html", "--title", title])
-titled = open(art("titled.html"), encoding="utf-8").read()
+with open(art("titled.html"), encoding="utf-8") as fh:
+    titled = fh.read()
 check("title escaped in page", code == 0 and "&lt;b&gt;&amp;&quot;x&quot;&lt;/b&gt;" in titled, titled[:120])
 check("title never encoded", decode(art("titled.png")) == secret, str(decode(art("titled.png"))))
 
