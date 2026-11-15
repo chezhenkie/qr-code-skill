@@ -3,7 +3,7 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const USAGE_TAIL: &str =
-    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text]";
+    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text]";
 const WIDTH: usize = 80;
 
 #[derive(Debug, PartialEq)]
@@ -15,6 +15,7 @@ pub struct Args {
     pub border: u32,
     pub html: bool,
     pub title: String,
+    pub term: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -35,6 +36,7 @@ enum Opt {
     Border,
     Html,
     Title,
+    Term,
 }
 
 impl Opt {
@@ -48,16 +50,20 @@ impl Opt {
             Opt::Border => "--border",
             Opt::Html => "--html",
             Opt::Title => "--title",
+            Opt::Term => "--term",
         }
     }
 
     fn takes_value(self) -> bool {
-        !matches!(self, Opt::Help | Opt::Version | Opt::Html)
+        !matches!(
+            self,
+            Opt::Help | Opt::Version | Opt::Html | Opt::Term
+        )
     }
 }
 
 /// Registration order decides how argparse lists ambiguous prefixes and wraps help.
-const LONG_OPTIONS: [(&str, Opt); 8] = [
+const LONG_OPTIONS: [(&str, Opt); 9] = [
     ("--help", Opt::Help),
     ("--file", Opt::File),
     ("--out", Opt::Out),
@@ -65,6 +71,7 @@ const LONG_OPTIONS: [(&str, Opt); 8] = [
     ("--border", Opt::Border),
     ("--html", Opt::Html),
     ("--title", Opt::Title),
+    ("--term", Opt::Term),
     ("--version", Opt::Version),
 ];
 
@@ -76,6 +83,10 @@ struct State {
     border: i64,
     html: bool,
     title: String,
+    term: bool,
+    out_given: bool,
+    scale_given: bool,
+    title_given: bool,
     extras: Vec<String>,
 }
 
@@ -89,6 +100,10 @@ impl Default for State {
             border: 4,
             html: false,
             title: "qr code".to_string(),
+            term: false,
+            out_given: false,
+            scale_given: false,
+            title_given: false,
             extras: Vec::new(),
         }
     }
@@ -250,21 +265,28 @@ fn apply(state: &mut State, opt: Opt, value: Option<String>) -> Option<Outcome> 
             state.html = true;
             None
         }
+        Opt::Term => {
+            state.term = true;
+            None
+        }
         Opt::File => {
             state.file = Some(value.unwrap_or_default());
             None
         }
         Opt::Out => {
             state.out = value.unwrap_or_default();
+            state.out_given = true;
             None
         }
         Opt::Title => {
             state.title = value.unwrap_or_default();
+            state.title_given = true;
             None
         }
         Opt::Scale => match int_value(value, Opt::Scale) {
             Ok(number) => {
                 state.scale = number;
+                state.scale_given = true;
                 None
             }
             Err(message) => Some(Outcome::Usage(message)),
@@ -310,6 +332,20 @@ fn finish(state: State) -> Outcome {
     if state.file.is_none() && state.text.is_none() {
         return Outcome::Usage("provide text or --file".to_string());
     }
+    if state.term {
+        if state.out_given {
+            return Outcome::Usage("--term writes no file; drop --out".to_string());
+        }
+        if state.html {
+            return Outcome::Usage("--term writes no file; drop --html".to_string());
+        }
+        if state.title_given {
+            return Outcome::Usage("--term writes no file; drop --title".to_string());
+        }
+        if state.scale_given {
+            return Outcome::Usage("--term writes no file; drop --scale".to_string());
+        }
+    }
     Outcome::Run(Args {
         text: state.text,
         file: state.file,
@@ -318,6 +354,7 @@ fn finish(state: State) -> Outcome {
         border: state.border as u32,
         html: state.html,
         title: state.title,
+        term: state.term,
     })
 }
 
@@ -366,7 +403,7 @@ pub fn usage(prog: &str) -> String {
 pub fn help(prog: &str) -> String {
     let mut text = usage(prog);
     text.push('\n');
-    text.push_str("Generate an offline QR code PNG.\n\n");
+    text.push_str("Generate an offline QR code PNG or print it to the terminal.\n\n");
     text.push_str("positional arguments:\n");
     text.push_str("  text             text to encode; omit when using --file\n\n");
     text.push_str("options:\n");
@@ -377,6 +414,7 @@ pub fn help(prog: &str) -> String {
     text.push_str("  --border BORDER  quiet zone in modules 0-16 (default 4)\n");
     text.push_str("  --html           write a viewer page next to the PNG\n");
     text.push_str("  --title TITLE    viewer page title\n");
+    text.push_str("  --term           print the QR code to the terminal, write no file\n");
     text
 }
 
@@ -410,6 +448,7 @@ mod tests {
                 assert_eq!(args.border, 4);
                 assert!(!args.html);
                 assert_eq!(args.title, "qr code");
+                assert!(!args.term);
             }
             other => panic!("expected a run, got {:?}", other),
         }
@@ -501,8 +540,61 @@ mod tests {
     #[test]
     fn help_flat_matches_the_frozen_fixture() {
         let flat = help("make-qr.py").split_whitespace().collect::<Vec<_>>().join(" ");
-        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] Generate an offline QR code PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT output PNG path --scale SCALE pixels per module 1-100 (default 10) --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG --title TITLE viewer page title";
+        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] Generate an offline QR code PNG or print it to the terminal. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT output PNG path --scale SCALE pixels per module 1-100 (default 10) --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG --title TITLE viewer page title --term print the QR code to the terminal, write no file";
         assert_eq!(flat, want);
+    }
+
+    #[test]
+    fn term_is_a_flag_with_a_quiet_zone() {
+        match parse(&argv(&["x", "--term", "--border", "2"])) {
+            Outcome::Run(args) => {
+                assert!(args.term);
+                assert_eq!(args.border, 2);
+                assert_eq!(args.out, "qr.png");
+            }
+            other => panic!("expected a run, got {:?}", other),
+        }
+        match parse(&argv(&["x", "--te"])) {
+            Outcome::Run(args) => assert!(args.term),
+            other => panic!("expected a run, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn term_refuses_every_output_option() {
+        assert_eq!(
+            usage_message(&["x", "--term", "-o", "a.png"]),
+            "--term writes no file; drop --out"
+        );
+        assert_eq!(
+            usage_message(&["x", "--term", "--html"]),
+            "--term writes no file; drop --html"
+        );
+        assert_eq!(
+            usage_message(&["x", "--term", "--title", "t"]),
+            "--term writes no file; drop --title"
+        );
+        assert_eq!(
+            usage_message(&["x", "--term", "--scale", "12"]),
+            "--term writes no file; drop --scale"
+        );
+        assert_eq!(
+            usage_message(&["x", "--term", "--out=a.png"]),
+            "--term writes no file; drop --out"
+        );
+    }
+
+    #[test]
+    fn term_still_needs_a_source() {
+        assert_eq!(usage_message(&["--term"]), "provide text or --file");
+    }
+
+    #[test]
+    fn title_and_term_share_the_t_prefix() {
+        assert_eq!(
+            usage_message(&["x", "--t"]),
+            "ambiguous option: --t could match --title, --term"
+        );
     }
 
     #[test]

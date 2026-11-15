@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0
+
+### New features
+
+#### All platforms
+
+* `--term` prints the QR code to the terminal and writes no file, so a code that is scanned once leaves nothing to delete.
+* The terminal rendering keeps the quiet zone and paints a light background behind black modules, so it scans from a dark terminal.
+* `--term` refuses `--out`, `--html`, `--title` and `--scale` with exit 2.
+
+### Changes
+
+* The help text and the usage line list `--term`.
+
 ## 0.8.0
 
 ### New features

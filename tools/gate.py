@@ -44,9 +44,58 @@ def art(*parts):
     return os.path.join(WORK, *parts)
 
 
-def run(args, stdin=None):
-    p = subprocess.run([TARGET] + args, cwd=WORK, capture_output=True, text=True, stdin=stdin)
+def run(args, stdin=None, cwd=None):
+    p = subprocess.run([TARGET] + args, cwd=cwd or WORK, capture_output=True, text=True, stdin=stdin)
     return p.returncode, p.stdout.strip(), p.stderr.strip()
+
+
+def run_bytes(args, cwd):
+    p = subprocess.run([TARGET] + args, cwd=cwd, capture_output=True, stdin=subprocess.DEVNULL)
+    return p.returncode, p.stdout, p.stderr
+
+
+TERM_ON = "\x1b[30;107m"
+TERM_OFF = "\x1b[0m"
+TERM_GLYPHS = {
+    " ": (False, False),
+    "\u2588": (True, True),
+    "\u2580": (True, False),
+    "\u2584": (False, True),
+}
+
+
+def term_image(text):
+    """Rebuild the 1-bit grid from painted half-block lines, or None."""
+    lines = text.splitlines()
+    if not lines:
+        return None
+    cells = []
+    for line in lines:
+        if not (line.startswith(TERM_ON) and line.endswith(TERM_OFF)):
+            return None
+        body = line[len(TERM_ON) : -len(TERM_OFF)]
+        if any(ch not in TERM_GLYPHS for ch in body):
+            return None
+        cells.append(body)
+    width = max(len(body) for body in cells)
+    image = Image.new("L", (width, len(cells) * 2), 255)
+    pixels = image.load()
+    for row, body in enumerate(cells):
+        for x, ch in enumerate(body):
+            upper, lower = TERM_GLYPHS[ch]
+            if upper:
+                pixels[x, row * 2] = 0
+            if lower:
+                pixels[x, row * 2 + 1] = 0
+    return image
+
+
+def term_decode(text):
+    image = term_image(text)
+    if image is None:
+        return None, None
+    wide = image.resize((image.width * 8, image.height * 8), Image.NEAREST)
+    return image, zxingcpp.read_barcode(wide)
 
 
 def png_probe(path):
@@ -205,6 +254,53 @@ with open(art("plain.png"), "rb") as src, open(trunc, "wb") as dst:
 size, complete = png_probe(trunc)
 full_size, full_complete = png_probe(art("plain.png"))
 check("png tail detects truncation", size is not None and not complete and full_complete, f"{size} {complete} {full_complete}")
+
+term_dir = art("term")
+os.makedirs(term_dir)
+code, out, err = run_bytes(["--term", "ab"], term_dir)
+text = out.decode("utf-8", "replace")
+image, result = term_decode(text)
+check("term exits 0 with no stderr", code == 0 and err == b"", f"{code} {err[:60]!r}")
+check("term writes nothing to disk", os.listdir(term_dir) == [], str(os.listdir(term_dir)))
+check("term paints every line", image is not None, text[:40])
+check("term decodes to the payload", result is not None and result.text == "ab", str(result))
+check(
+    "term keeps a square white quiet zone",
+    image is not None
+    and image.width == 29
+    and image.height == 30
+    and image.getextrema() == (0, 255)
+    and image.getpixel((0, 0)) == 255,
+    f"{image.size if image else None} {image.getextrema() if image else None}",
+)
+
+zero_dir = art("term-zero")
+os.makedirs(zero_dir)
+code, out, err = run_bytes(["--term", "--border", "0", "ab"], zero_dir)
+image, result = term_decode(out.decode("utf-8", "replace"))
+check(
+    "term border 0 gives a bare 21-module grid",
+    code == 0 and image is not None and image.width == 21 and result is not None and result.text == "ab",
+    f"{code} {image.size if image else None}",
+)
+
+big_dir = art("term-big")
+os.makedirs(big_dir)
+code, out, err = run_bytes(["--term", "x" * 3000], big_dir)
+check(
+    "term oversize writes nothing",
+    code == 1 and err.startswith(b"FAIL store") and os.listdir(big_dir) == [],
+    f"{code} {err[:60]!r}",
+)
+
+for flag, label in (
+    (["-o", "a.png"], "--out"),
+    (["--html"], "--html"),
+    (["--title", "t"], "--title"),
+    (["--scale", "12"], "--scale"),
+):
+    code, out, err = run(["x", "--term"] + flag)
+    check(f"term rejects {label}", code == 2 and f"drop {label}" in err, f"{code} {err[-70:]}")
 
 code, out, err = run(["--version"])
 check(

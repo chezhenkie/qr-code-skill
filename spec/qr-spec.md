@@ -27,7 +27,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 
 ## 2. Functional requirements
 
-QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag.
+QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag. QR-23 applies from 0.9.0.
 
 | Id | Required behaviour | Failure behaviour |
 |---|---|---|
@@ -44,7 +44,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | QR-11 | A payload over the capacity of level M fails without leaving a file. | exit 1, stderr starts `FAIL store:` |
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
 | QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size, and the file must end with an IEND chunk. | on a size mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>`; without IEND the file is removed, exit 1, stderr `FAIL png tail: missing IEND` |
-| QR-14 | stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output on any path |
+| QR-14 | In file mode, stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output on that path |
 | QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by file name; it contains no payload text, no script and no external asset; the image is scaled to 70vmin, the shorter side of the viewport. | QR-19 |
 | QR-16 | `--title` sets the page title and caption only, HTML-escaped, and is never encoded. | none; any string is accepted |
 | QR-17 | Exit 0 on success, 1 on a runtime failure, 2 on a usage error. | n/a |
@@ -53,6 +53,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | QR-20 | `-h` and `--help` print usage on stdout and exit 0; an unknown option is a usage error. | exit 2 for unknown options |
 | QR-21 | Standard input is never read. | n/a |
 | QR-22 | `--version` prints the single version string and exits 0, on both platforms. | exit 0 always |
+| QR-23 | `--term` prints the symbol to stdout as UTF-8 text, quiet zone included, black modules on a painted light background, two module rows per text row. It writes no file, creates no directory and prints no path. It is exclusive with `-o`, `--html`, `--title` and `--scale`; `--border` still sets the quiet zone. | exit 2, stderr `--term writes no file; drop <option>` for each conflicting flag; a failed stdout write is one `FAIL write: stdout` line and exit 1 |
 
 ## 3. Non-functional requirements
 
@@ -69,6 +70,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-09 | The Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
 | NFR-10 | The Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Measured on the 0.8.0 artifacts: 244736 bytes for `qr.exe`, 648296 for `qr`. |
 | NFR-11 | The build uses one source tree and one version for both binaries, with no per-platform source differences. |
+| NFR-12 | `--term` performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
 ## 4. Architecture
 
@@ -81,8 +83,9 @@ Components and responsibilities:
 - `tools/diff_python.py`: differential sweep over the corpus and a page set, comparing a binary with the Python line. Run on Windows and Linux before deletion, kept for a re-run against a script taken from git history.
 - `SKILL.md`: the text an agent reads; owns discovery, usage guidance, the platform-to-binary rule and the secrets rule.
 - Viewer page: static HTML next to the PNG, no script, one image reference.
+- Terminal renderer: `rust-src/src/term.rs` owns the block glyphs, the painted background, the two-rows-per-cell pairing and the quiet zone. It turns the encoded symbol into a string and has no filesystem access.
 
-Data flow: argv -> validated payload -> symbol -> PNG on disk -> header check -> stdout paths -> optional page.
+Data flow: argv -> validated payload -> symbol -> PNG on disk -> header check -> stdout paths -> optional page. Terminal mode stops at stdout: argv -> validated payload -> symbol -> painted text.
 
 There is no persistent state, no configuration file and no service. Each run is independent.
 
@@ -103,11 +106,12 @@ Command line:
 | `--border` | int | 0-16, default 4 | module units |
 | `--html` | flag | off | writes the page |
 | `--title` | string | default `qr code` | page only, never encoded |
+| `--term` | flag | off | prints the symbol to stdout, writes no file |
 | `--version` | flag | off | prints the version, added by the port |
 
-Streams: stdout carries the absolute paths, one per line, and nothing else on success. stderr carries one line for a runtime failure, prefixed `FAIL`. Usage errors use the argparse-compatible text on stderr.
+Streams: in file mode stdout carries the absolute paths, one per line, and nothing else on success. In terminal mode stdout carries the painted symbol and no path. stderr carries one line for a runtime failure, prefixed `FAIL`. Usage errors use the argparse-compatible text on stderr.
 
-Files: the PNG is the only required output; the page is optional. The output is always written as PNG, whatever the extension. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`.
+Files: the PNG is the only required output; the page is optional; `--term` writes no file and refuses both options. The output is always written as PNG, whatever the extension. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`.
 
 ### 5.1 Distribution
 
@@ -128,22 +132,24 @@ Breaking-change rule: flag names, defaults, ranges, message text, path derivatio
 |---|---|---|
 | Success, plain | valid payload, no `--html` | one absolute PNG path on stdout, exit 0 |
 | Success, page | valid payload, `--html` | PNG path then page path, exit 0 |
+| Success, terminal | valid payload, `--term` | painted symbol on stdout, exit 0, no file written |
 | Version | `--version` | one version line on stdout, exit 0 |
-| Usage error | conflicting or missing source, out-of-range number, unknown option | argparse-compatible text on stderr, exit 2, nothing written |
+| Usage error | conflicting or missing source, out-of-range number, unknown option, `--term` with a file option | argparse-compatible text on stderr, exit 2, nothing written |
 | Capacity failure | payload over level M capacity | one `FAIL store:` line on stderr, exit 1, no file |
 | Size mismatch | header dimensions differ from the symbol size, or the file has no IEND chunk | one `FAIL png size` or `FAIL png tail` line on stderr, file removed, exit 1 |
 | Filesystem failure | unwritable output path, unreadable or non-UTF-8 input | one `FAIL read` or `FAIL write` line on stderr, exit 1, no traceback |
 | Page failure | the PNG is written and the page path is blocked | one `FAIL write` line on stderr, exit 1, PNG kept, stdout empty |
+| Terminal write failure | stdout is closed or unwritable during `--term` | one `FAIL write: stdout` line on stderr, exit 1 |
 
 Recovery is always a corrected re-run; the tool holds no state that a failed run can corrupt.
 
 ## 7. Security and privacy
 
 - Input trust: the payload is data. It is never passed to a shell, never interpolated into HTML, and never used as a path component. The only interpolation into HTML is the escaped title and the base name of the PNG.
-- Filesystem reach: read the `-f` path, write the `-o` path and optionally the page path. Nothing else, no temp directory.
+- Filesystem reach: read the `-f` path, write the `-o` path and optionally the page path. Nothing else, no temp directory. `--term` writes nothing.
 - Network reach: none, by NFR-01.
 - Credentials: none used or stored.
-- Secret lifecycle: a QR of a token is a photographable secret. The tool stores nothing, prints nothing of the payload, and the operator deletes the artefact after scanning, per the SKILL.md rule.
+- Secret lifecycle: a QR of a token is a photographable secret. The tool stores nothing, prints nothing of the payload, and the operator deletes the artefact after scanning, per the SKILL.md rule. `--term` leaves no artefact to delete and is the preferred mode for a one-off code.
 - Enforcement points: escaping for QR-16, base-name-only reference for QR-15, and the gate checks `viewer hides text` and `viewer references png` on the shipped binary.
 - Supply chain: the binary is built from this repo and committed here, so the installed artefact is the reviewed artefact. Crates are pinned in `Cargo.lock`.
 
@@ -183,6 +189,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-20 | gate exit code | `help exits 0` |
 | QR-21 | gate decode with stdin attached | `stdin is ignored` |
 | QR-22 | gate exit code and stdout | `version prints one line` |
+| QR-23, NFR-12 | gate terminal rebuild and directory listing | `term exits 0 with no stderr`, `term writes nothing to disk`, `term decodes to the payload`, `term keeps a square white quiet zone`, `term border 0 gives a bare 21-module grid`, `term oversize writes nothing`, `term rejects --out` to `--scale` |
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
 | NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 244736 and 648296 bytes |
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green on both builds (run 43731783541) |
@@ -199,6 +206,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, Python 0.7.0 | shipped and gated: 15 of 15 |
 | Build, Python 0.7.1 | gated: 35 of 35 |
 | Build, port increments | P1 to P4 closed |
+| Build, 0.9.0 | P5: terminal display, 47 checks on both platforms |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 
 Port increments, each closing at Gate 2:
@@ -207,6 +215,7 @@ Port increments, each closing at Gate 2:
 2. P2: viewer page parity. Gate met: page bytes equal over nine titles and names, including escaping, an empty title and control characters.
 3. P3: packaging. Gate met: both binaries committed under `bin\`, a scratch folder with `SKILL.md` and `bin` runs, `readelf` shows no `NEEDED`, the `alpine:3.21` job runs the static binary, sizes are 244736 and 648296 bytes, and the Python generator is deleted.
 4. P4: differential harness. Gate met by the pre-deletion sweep: 91 payloads and 9 pages on Windows and Linux, with no difference in exit code, printed names, decoded text, dimensions or page bytes. The tool stays in `tools\`; it is not a permanent CI job because the reference is gone.
+5. P5: terminal display. Gate met by the 47 checks, which rebuild the printed blocks into a bitmap, decode the payload and require an empty working directory after the run.
 
 Gate 1 is closed; OQ-1 to OQ-5 are closed.
 
@@ -251,3 +260,5 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-15 | The differential sweep runs once, before the Python line is deleted; CI keeps the frozen matrix, the gate and symbol parity | a deleted reference in CI would need segno and a copy of the old code on every run |
 | 2026-11-15 | `-o` no longer requires a `.png` extension; the writer always emits PNG | the format no longer comes from an extension lookup, and refusing a path over its extension has no user value |
 | 2026-11-15 | The release attaches two platform archives, each holding `SKILL.md`, `CHANGELOG.md`, `LICENSE` and one binary, rather than the binaries alone | the install unit is a folder copy, and the release manual rules out bare binaries |
+| 2026-11-15 | 0.9.0 adds `--term`, a terminal display mode exclusive with every file option | the main use is a code scanned once, and a mode that cannot write a file cannot leave one behind |
+| 2026-11-15 | Terminal rendering uses half blocks on a painted bright-white background, two module rows per text row | a module stays square in a terminal cell, and a dark terminal still shows the dark-on-light polarity a scanner expects |

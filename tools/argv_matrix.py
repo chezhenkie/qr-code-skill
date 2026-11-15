@@ -70,6 +70,11 @@ CASES = [
     {"id": "file-missing", "argv": ["-f", "nope.txt"], "stderr_prefix": "FAIL read:"},
     {"id": "nested-out", "argv": ["x", "-o", "a/b/c.png"]},
     {"id": "html-title", "argv": ["x", "--html", "--title", "a b"]},
+    {"id": "term-text", "argv": ["x", "--term"]},
+    {"id": "term-border-zero", "argv": ["x", "--term", "--border", "0"]},
+    {"id": "term-out", "argv": ["x", "--term", "-o", "a.png"]},
+    {"id": "term-html", "argv": ["x", "--term", "--html"]},
+    {"id": "ambiguous-t", "argv": ["x", "--t"]},
 ]
 
 
@@ -97,11 +102,11 @@ def run_case(case, prefix):
     for name, content in case.get("setup", {}).items():
         with open(os.path.join(work, name), "w", encoding="utf-8", newline="") as fh:
             fh.write(content)
-    p = subprocess.run(prefix + case["argv"], cwd=work, capture_output=True, text=True)
+    p = subprocess.run(prefix + case["argv"], cwd=work, capture_output=True)
     return {
         "rc": p.returncode,
-        "stdout": normalize(p.stdout, work, prefix),
-        "stderr": flatten(normalize(p.stderr, work, prefix)),
+        "stdout": normalize(p.stdout.decode("utf-8", "replace"), work, prefix),
+        "stderr": flatten(normalize(p.stderr.decode("utf-8", "replace"), work, prefix)),
     }
 
 

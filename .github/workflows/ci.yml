@@ -93,7 +93,7 @@ jobs:
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: python tools/argv_matrix.py --target rust-src/target/release/qr.exe
       - uses: actions/upload-artifact@v4
-        if: hashFiles('rust-src/Cargo.toml') != ''
+        if: always() && hashFiles('rust-src/Cargo.toml') != ''
         with:
           name: qr-windows
           path: rust-src/target/release/qr.exe
@@ -144,7 +144,7 @@ jobs:
           chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
           python tools/argv_matrix.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
       - uses: actions/upload-artifact@v4
-        if: hashFiles('rust-src/Cargo.toml') != ''
+        if: always() && hashFiles('rust-src/Cargo.toml') != ''
         with:
           name: qr-linux-musl
           path: rust-src/target/x86_64-unknown-linux-musl/release/qr

@@ -1,7 +1,8 @@
-//! Offline QR code generator: text in, PNG out, optional viewer page.
+//! Offline QR code generator: text in, PNG out or terminal display, optional viewer page.
 
 mod cli;
 mod png;
+mod term;
 mod util;
 mod viewer;
 
@@ -41,6 +42,7 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         border,
         html,
         title,
+        term,
     } = args;
 
     let data = match file.as_deref() {
@@ -53,6 +55,23 @@ fn run(args: cli::Args, prog: &str) -> u8 {
     if data.is_empty() {
         eprint!("{}", cli::error(prog, "empty input"));
         return 2;
+    }
+
+    if term {
+        let code = match encode_or_fail(&data) {
+            Ok(code) => code,
+            Err(code) => return code,
+        };
+        let painted = term::render(&code, border);
+        let mut stdout = std::io::stdout();
+        let mut result = stdout.write_all(painted.as_bytes());
+        if result.is_ok() {
+            result = stdout.flush();
+        }
+        return match result {
+            Ok(()) => 0,
+            Err(err) => fail("write", "stdout", &err),
+        };
     }
 
     let out = util::absolute(&out);
@@ -69,12 +88,9 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         }
     }
 
-    let code = match encode(&data) {
+    let code = match encode_or_fail(&data) {
         Ok(code) => code,
-        Err(()) => {
-            eprintln!("FAIL store: data does not fit at error correction level M");
-            return 1;
-        }
+        Err(code) => return code,
     };
     let side = (code.size() as u64 + 2 * border as u64) * scale as u64;
     let side = side as u32;
@@ -127,6 +143,16 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         println!("{}", page);
     }
     0
+}
+
+fn encode_or_fail(data: &str) -> Result<QrCode, u8> {
+    match encode(data) {
+        Ok(code) => Ok(code),
+        Err(()) => {
+            eprintln!("FAIL store: data does not fit at error correction level M");
+            Err(1)
+        }
+    }
 }
 
 fn encode(data: &str) -> Result<QrCode, ()> {
