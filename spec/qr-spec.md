@@ -38,7 +38,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 | QR-07 | Missing parent directories of the output path are created, including nested ones. | QR-19 |
 | QR-08 | `--scale` is an integer 1 to 100, default 10 pixels per module. | exit 2, stderr `--scale must be 1-100` |
 | QR-09 | `--border` is an integer 0 to 16, default 4 quiet-zone modules. | exit 2, stderr `--border must be 0-16` |
-| QR-10 | Error correction is fixed at level M and is not selectable. | no option exists |
+| QR-10 | Error correction is fixed at level M and is not selectable. Symbols are regular QR, never Micro QR. | no option exists |
 | QR-11 | A payload over the capacity of level M fails without leaving a file. | exit 1, stderr starts `FAIL store:` |
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
 | QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size. | on mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>` |
@@ -223,3 +223,4 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | PNG compared by decode and dimensions, not by hash | two encoders produce different bytes for the same symbol |
 | 2026-11-15 | One folder per language: `python\`, `rust-src\`, with tools in `tools\`; `temp\` and `logs\` ignored | the root stays readable and each language has one home |
 | 2026-11-15 | For 0.7.0 the version home is `metadata.version` in SKILL.md, because the line has no build manifest; from 0.8.0 the manifest rule applies | the manual asks for one home, and a script has no manifest yet |
+| 2026-11-15 | Regular QR only; Micro QR is never emitted | scanner support varies, and the common pure-Rust encoders do not emit Micro QR, so one symbol family keeps parity |

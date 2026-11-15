@@ -11,14 +11,14 @@ Method: Part 1 was written from the code and from black-box runs of the shipped 
 | Id | Severity | Location | Observation | Why it matters |
 |---|---|---|---|---|
 | M-01 | high | `python/make-qr.py:76` | `segno.make(data, error="m")` lets segno raise the error level when the symbol has spare capacity. A 19-character URL came out at level Q, confirmed by the decoder. | QR-10, SKILL.md, README and the changelog all state that error correction is fixed at M. It is a minimum, not a fixed level, so the documented contract is false and any test that asserts M fails. |
-| M-02 | medium | `python/make-qr.py:76` | Payloads of 2 and 4 characters produce Micro QR symbols (versions M3 and M2). | Micro QR is a separate symbol family with narrower scanner support, and no mainstream Rust encoder emits it. Left as is, the port cannot reproduce module counts without a bespoke encoder. |
+| M-02 | medium | `python/make-qr.py:76` | Payloads of 2 and 4 characters produce Micro QR symbols (versions M3 and M2). | Micro QR is a separate symbol family with narrower scanner support. The common pure-Rust encoders (qrcode, fast_qr, qrcodegen) do not emit it, so a port either adds a bespoke encoder or changes the symbol family. |
 | M-03 | medium | `python/make-qr.py:62-63` | `open(..., "r", encoding="utf-8")` translates line endings; a file holding `a\r\nb\r\n` decodes back as `a\nb`. | The payload is silently rewritten on read. A file whose bytes matter (multi-line Wi-Fi string, structured token) is not encoded as stored, and no document mentions it. |
 | M-04 | medium | `python/make-qr.py:61-63` | Read failures are uncaught. A missing file exits 1 with `FileNotFoundError` and a traceback; a non-UTF-8 file exits 1 with `UnicodeDecodeError` and a traceback. | QR-19 requires one line on stderr, exit 1 and no traceback. The traceback also prints absolute paths of the script and the caller. |
-| M-05 | medium | `python/make-qr.py:75-77`, `85`, `92-94` | Write failures are uncaught: a parent path that is a file gives a traceback, and a blocked page path gives a traceback after the PNG path has already gone to stdout. `os.remove` at line 85 is unguarded too. | QR-19 and QR-14. A caller that reads stdout sees a success path while the run has failed, which is the exact case G3 exists to prevent. |
+| M-05 | medium | `python/make-qr.py:74`, `75-77`, `85`, `92-94` | Write failures are uncaught: a parent path that is a file fails in `os.makedirs` at line 74 with a traceback, and a blocked page path gives a traceback after the PNG path has already gone to stdout. `os.remove` at line 85 is unguarded too. | QR-19 and QR-14. A caller that reads stdout sees a success path while the run has failed, which is the exact case G3 exists to prevent. |
 | M-06 | low | `python/make-qr.py:59` | `if args.file and args.text` treats an empty string as "no text", so `"" -f file` encodes the file at exit 0. | QR-03 says the two sources are mutually exclusive. A caller that means to reject an empty payload instead gets a file-backed one. |
 | M-07 | low | `python/make-qr.py:36-41`, `82-88` | The post-write check reads only the 24-byte header. A file truncated to 100 bytes still reports the expected dimensions. | The check proves the module count, not that the image is complete. Only a decode proves completeness, and the generator deliberately does not carry a decoder. |
-| M-08 | low | `python/make-qr.py:15-31` | The viewer page has no viewport meta tag. | A phone lays the page out at a 980 px default viewport, so `70vmin` resolves against 980 px, not the screen. The page is sized for scanning in intent but not in fact. |
-| M-09 | low | `python/make-qr.py:91-93` | With `-o` and no file extension, the page references an image name without an extension. | A file:// browser has no extension for MIME guessing and may refuse to render it. Documented behaviour (the page gains `.html`), but the image reference is a hazard. |
+| M-08 | low | `python/make-qr.py:15-31` | The viewer page has no viewport meta tag. | A phone lays the page out at a 980 px default layout viewport, so `70vmin` resolves against 980 px, not the screen. The default is browser behaviour from the specification; the missing tag is measured. The page is sized for scanning in intent but not in fact. |
+| M-09 | low | `python/make-qr.py:91-93` | With `-o` and no file extension, the page references an image name without an extension. | A file:// browser has no extension for MIME guessing and may refuse to render it. Not observed in a browser; resolved by a doc line, not a code change. |
 | M-10 | low | `python/make-qr.py:55-56`, `76-77` | No raster guard. 2331 bytes at `--scale 100` is 18500 px per side, about 342 Mpx. | The accepted range allows an output that no scanner needs and that costs hundreds of MB of raster. Not run at full size on purpose. |
 | M-11 | trivial | `python/make-qr.py:13` | `DataOverflowError` is imported from `segno.encoder`, a private module, although `segno.DataOverflowError` is public and the same object. | A segno refactor can break the import at module load, which would break every run, not just an overflow. |
 | M-12 | trivial | `python/make-qr.py:36-41`, `86` | `png_size` returns `None` for a file that is not a PNG, and the message then prints `None`. | Acceptable as is; recorded so it is not raised again. |
@@ -37,7 +37,7 @@ Method: Part 1 was written from the code and from black-box runs of the shipped 
 |---|---|---|---|---|
 | D-01 | high | `SKILL.md:42`, `README.md:49`, `CHANGELOG.md:9`, `spec/qr-spec.md` QR-10 | "Error correction is fixed at M." | False; the level is raised when capacity allows (M-01). |
 | D-02 | medium | `SKILL.md:24`, `spec/qr-spec.md` QR-02 and QR-12 | `-f` reads UTF-8 and strips surrounding whitespace; the PNG decodes back to the payload. | It also rewrites CRLF and lone CR, so "the payload" is neither the file bytes nor the stripped text (M-03). |
-| D-03 | low | `README.md:60` | "No open defects" (line dated 2026-11-13). | Contradicted by this audit. |
+| D-03 | low | `README.md:64` | "No open defects" (line dated 2026-11-13). | Contradicted by this audit. |
 | D-04 | low | `SKILL.md:58` | Keep the quiet zone at 4 modules or more. | `--border` accepts 0. Advice, not a contract; recorded to close it. |
 | D-05 | - | `seed/README.md:19-20`, `seed/skill- doc-needs-editing.md` | Examples reference `phone-token.png` and `phone-token.html`. | Those files lived on the Desktop and were never moved. History, not product. |
 | D-06 | - | `docs/python-to-rust-refactor-pitfalls.md:126, 145, 156` | "The fix used in this port", "used here: 28 cases", "Measured on the shipped exe". | Examples from an earlier port. A general manual; not a claim about this repo. |
@@ -46,7 +46,7 @@ Method: Part 1 was written from the code and from black-box runs of the shipped 
 
 ## Evidence log
 
-Probes ran against the shipped script, working directory `audit-scratch`, decoder zxing-cpp 2.x with Pillow.
+Probes ran against the shipped script, working directory `audit-scratch`, decoder zxing-cpp 3.1.1 with Pillow 12.3.0.
 
 - `-f nope.txt` -> exit 1, `FileNotFoundError: [Errno 2] No such file or directory: 'nope.txt'`, no PNG written.
 - `-f bad.bin` (bytes `ff fe 00 01`) -> exit 1, `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff`.
@@ -60,7 +60,23 @@ Probes ran against the shipped script, working directory `audit-scratch`, decode
 - Empty stdin with no source -> exit 2, `provide text or --file`; stdin is not read.
 - Generated page contains no `name="viewport"`.
 - 2331 bytes at level M is version 40, 177 modules; at `--scale 100` that is 18500 px per side.
+- Gate run with a shadowed `zxingcpp` module that raises `ImportError`: exit 1 after two PASS lines, with a traceback.
 
 ## Counts
 
-High 2 (M-01 and its document side D-01, one root cause), medium 6 (M-02 to M-05, G-01, D-02), low 10, trivial 3, out of scope 2.
+25 rows: high 2, medium 6, low 10, trivial 3, out of scope 2, non-findings 2.
+
+## Re-audit
+
+A second pass checked every row against the code and re-ran the probes. Corrections, all applied above:
+
+- The decoder is zxing-cpp 3.1.1, not the 2.x the first draft of the evidence log claimed.
+- D-03 sits at `README.md:64`, not 60.
+- M-05 also fails at line 74, inside `os.makedirs`, before the try block.
+- M-02 no longer claims that no Rust encoder emits Micro QR. The common pure-Rust crates do not; `rxing` is a ZXing port and does. The finding stands on scanner support and on parity cost.
+- M-08 marks the 980 px layout viewport as browser specification rather than a measurement.
+- M-09 marks the browser refusal as unverified.
+- G-05 now has a measured reproduction instead of an inspection.
+- The counts line now totals 25 and separates non-findings from out-of-scope items.
+
+No finding was withdrawn. The severity order is unchanged.
