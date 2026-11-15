@@ -186,7 +186,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
 | NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 244736 and 648296 bytes |
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green on both builds (run 43731783541) |
-| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | both print 0.8.0; the release notes are pending a tag |
+| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | both print 0.8.0; v0.8.0 is tagged on b976acf and published with two archives, 126594 and 295561 bytes, each digest carried in the notes; the published assets were re-downloaded, hash-compared with the tree, and the extracted Windows binary passed the gate 36 of 36 and the matrix 27 of 27 |
 
 Acceptance criteria for the port, and the evidence: the gate passes with the Rust binary in place of the script (36 of 36 on both builds); the CLI matrix matches 27 of 27 on both; the differential sweep compares exit code, printed names, payload decode, dimensions and page bytes over 91 payloads and 9 pages on Windows and Linux, with PNG bytes not compared across implementations because a different encoder produces a different valid file (QR-12 and NFR-07 cover what matters). Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep ran before the Python line was deleted (run 43732908549); `tools/diff_python.py` stays for a re-run against a script taken from history, and the permanent checks are the gate, the matrix and symbol parity. The Linux binary also runs on Alpine x86_64 in that workflow.
 
@@ -199,7 +199,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, Python 0.7.0 | shipped and gated: 15 of 15 |
 | Build, Python 0.7.1 | gated: 35 of 35 |
 | Build, port increments | P1 to P4 closed |
-| Release, 0.8.0 | binaries committed and gated; tag and release notes pending |
+| Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 
 Port increments, each closing at Gate 2:
 
@@ -250,3 +250,4 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-15 | The gate tests `bin\qr.exe` or `bin/qr` by default and carries its own PNG probe | the Python module it used is deleted at 0.8.0, and the gate must exercise the shipped artefact |
 | 2026-11-15 | The differential sweep runs once, before the Python line is deleted; CI keeps the frozen matrix, the gate and symbol parity | a deleted reference in CI would need segno and a copy of the old code on every run |
 | 2026-11-15 | `-o` no longer requires a `.png` extension; the writer always emits PNG | the format no longer comes from an extension lookup, and refusing a path over its extension has no user value |
+| 2026-11-15 | The release attaches two platform archives, each holding `SKILL.md`, `CHANGELOG.md`, `LICENSE` and one binary, rather than the binaries alone | the install unit is a folder copy, and the release manual rules out bare binaries |

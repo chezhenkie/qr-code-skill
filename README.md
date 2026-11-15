@@ -2,7 +2,7 @@
 
 Offline QR code generator shipped as an agent skill: a command-line generator that needs no network, plus a `SKILL.md` an agent host can load. This folder is the source of truth; the copy used here lives under `~/.config/opencode/skills\qr`.
 
-Source repo: https://github.com/chezhenkie/qr-code-skill, private.
+Source repo: https://github.com/chezhenkie/qr-code-skill, private. Release v0.8.0: https://github.com/chezhenkie/qr-code-skill/releases/tag/v0.8.0.
 
 ## Layout
 
