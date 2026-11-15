@@ -4,28 +4,29 @@ Offline QR code generator, packaged as an OpenCode skill. This folder is the sou
 
 Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 
-## Files
+## Layout
 
 | Path | What it is |
 |---|---|
-| `SKILL.md` | Skill contract: frontmatter (`name: qr`, description) and the instructions an agent reads. |
-| `make-qr.py` | The generator. Text or file in, PNG out, optional viewer page. |
-| `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-21, non-functional requirements, interfaces, states, validation map, gates and open questions. |
+| `SKILL.md` | Skill contract: frontmatter (`name: qr`, description, version) and the instructions an agent reads. |
+| `python\make-qr.py` | The generator, shipped today. Text or file in, PNG out, optional viewer page. |
+| `tools\gate.py` | 15-check acceptance gate. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
+| `rust-src\` | The Rust crate from P1 of the port. Empty until then. |
+| `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-22, non-functional requirements, interfaces, distribution, states, validation map, gates and open questions. |
 | `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
-| `gate\gate.py` | 15-check acceptance gate. Rewrites `gate\out` on every run and exits non-zero on any failure. |
-| `gate\out` | Scratch output of the last gate run. Disposable. |
-| `seed\` | The original Desktop seed (`make-qr.py`, `README.md`, `skill- doc-needs-editing.md`), moved here unedited. Historical only; the root copy is current. |
+| `seed\` | The original Desktop seed (`make-qr.py`, `README.md`, `skill- doc-needs-editing.md`), moved here unedited. Historical only, never a build input. |
 | `CHANGELOG.md` | Version chapters, newest first. |
 | `LICENSE` | MIT. |
+| `bin\` | Per-platform builds from P3: `qr.exe` and `qr`. Committed, because an install is a folder copy. |
 
-Only `SKILL.md` and `make-qr.py` belong in the installed skill directory. The gate and the seed stay out of it so the skill stays two files.
+The installed skill is `SKILL.md` plus the generator. Tools, spec, docs, seed and source folders are never shipped.
 
-The version has one home: `metadata.version` in `SKILL.md`. The changelog chapter and any later tag derive from it.
+The version has one home: `metadata.version` in `SKILL.md` until the port, then the crate manifest alone. The changelog chapter and any later tag derive from it. Current 0.7.0; the Rust line releases as 0.8.0.
 
 ## Install
 
 ```powershell
-Copy-Item .\SKILL.md, .\make-qr.py "$env:USERPROFILE\.config\opencode\skills\qr\" -Force
+Copy-Item .\SKILL.md, .\python\make-qr.py "$env:USERPROFILE\.config\opencode\skills\qr\" -Force
 ```
 
 Reload OpenCode afterwards. The directory name must stay `qr`: the skill id is the folder name, and `SKILL.md` repeats it in the frontmatter.
@@ -39,7 +40,7 @@ Gate only: `Pillow` and `zxing-cpp`, used to decode the produced PNG and compare
 ## Gate
 
 ```powershell
-python gate\gate.py
+python tools\gate.py
 ```
 
 Covers: text and file input, exact decode of both, whitespace stripping, the two printed paths, viewer page references the PNG and never contains the encoded text, pixel size at scale 10 and 12, and rejection of text plus file, empty text, oversize input (2331-byte limit at error level M), scale 0, and border 17.
@@ -56,7 +57,7 @@ A QR that encodes a token, password, or provisioning string is a photographable 
 
 ## Port
 
-The Rust line replaces the Python generator at 2.0.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`.
+The Rust line replaces the Python generator at 0.8.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. The crate lives in `rust-src\` and the built files in `bin\`. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`.
 
 ## Status
 
@@ -64,4 +65,4 @@ The Rust line replaces the Python generator at 2.0.0: one console binary for Win
 
 2026-11-15: put under git and pushed to a private repo. Installed files still hash-equal to the source. Gate passes 15 of 15.
 
-2026-11-15: process docs added under `docs\`; spec sheet, changelog and license added. Version moved to `1.0.0` in `SKILL.md`.
+2026-11-15: process docs, spec sheet, changelog and license added. Layout split into `python\`, `tools\` and `rust-src\`; loose scratch output removed. Version set to 0.7.0, with 0.8.0 reserved for the Rust line.

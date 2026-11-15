@@ -1,4 +1,6 @@
-gate/out/
-out/
+python/__pycache__/
+tools/.artifacts/
+temp/
+logs/
 __pycache__/
 *.pyc

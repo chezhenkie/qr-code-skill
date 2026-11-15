@@ -5,11 +5,11 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 1.0.0 Python, 2.0.0 Rust |
+| Version | 0.7.0 Python, 0.8.0 Rust |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
-| Related | SKILL.md, README.md, gate/gate.py, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
+| Related | SKILL.md, README.md, tools/gate.py, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
 | Scope | the shipped skill, SKILL.md and the generator; the gate is verification, not product |
 
 ## 1. Problem and goals
@@ -23,7 +23,7 @@ Goals:
 - G3: a failed run never prints a path to a broken or absent file.
 - G4: install is a folder copy with no interpreter, package manager or build step on the target.
 
-Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 2.0.0.
+Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 0.8.0.
 
 ## 2. Functional requirements
 
@@ -74,13 +74,15 @@ Components and responsibilities:
 
 - Generator: argument parsing, validation, symbol encoding, the post-write header check and the viewer page. Owns argument semantics, output naming, stdout and stderr text, exit codes.
 - Symbol encoder: module layout, mask selection, PNG raster. Owns module content and pixel output.
-- `gate/gate.py`: black-box harness that runs the shipped artefact, decodes its output and asserts the contract. Stays in Python, is not shipped.
+- `tools/gate.py`: black-box harness that runs the shipped artefact, decodes its output and asserts the contract. Stays in Python, is not shipped.
 - `SKILL.md`: the text an agent reads; owns discovery, usage guidance, the platform-to-binary rule and the secrets rule.
 - Viewer page: static HTML next to the PNG, no script, one image reference.
 
 Data flow: argv -> validated payload -> symbol -> PNG on disk -> header check -> stdout paths -> optional page.
 
 There is no persistent state, no configuration file and no service. Each run is independent.
+
+Repository layout: the Python generator lives in `python\`, the gate in `tools\`, the crate in `rust-src\` from P1, the built binaries in `bin\`. `spec\`, `docs\` and `seed\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and the generator.
 
 The Python line is source of truth until the port lands. From the first Rust release the Python generator is deleted from the tree, git history is the only reference, and nothing reads or runs it any more. `seed/` keeps the original Desktop copies as history and is never a build input.
 
@@ -114,7 +116,7 @@ Files: the PNG is the only required output; the page is optional. The page path 
 | D-05 | The built binaries are committed under `bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
-Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 2.0.0.
+Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. The line stays below 1.0.0 until the skill has a stable install model and no planned breaking change.
 
 ## 6. Functionality and states
 
@@ -179,15 +181,15 @@ Acceptance criteria for the port: the gate passes with the Rust binary in place 
 |---|---|
 | Define | closed 2026-11-15: problem, goals, non-goals, requirements |
 | Design | under review: architecture, interfaces, distribution, states, security, validation map |
-| Build, Python 1.0.0 | shipped and gated: 15 of 15 |
+| Build, Python 0.7.0 | shipped and gated: 15 of 15 |
 | Build, port increments | not started |
-| Release, 2.0.0 | not started |
+| Release, 0.8.0 | not started |
 
 Port increments, each closing at Gate 2:
 
-1. P1: encoder and CLI parity, no page. Gate: the 28-case argv matrix matches on rc and stderr, and every fixture decodes to the same payload at the same dimensions.
+1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: the 28-case argv matrix matches on rc and stderr, and every fixture decodes to the same payload at the same dimensions.
 2. P2: viewer page parity. Gate: the page is byte-equal to the Python output for the same title and PNG stem.
-3. P3: packaging. Windows console build and musl static build committed under `bin/`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
+3. P3: packaging. One crate in `rust-src\` builds both targets: Windows console build and musl static build, committed under `bin\`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
 4. P4: differential harness in the gate. Gate: the full fixture sweep is green on Windows and Linux, and the gate keeps its Python dependency set.
 
 Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a decision before P3.
@@ -197,7 +199,7 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | Id | Question | Owner | Consequence if open |
 |---|---|---|---|
 | OQ-1 | Closed 2026-11-15: the skill ships per-platform binaries inside the qr folder, and the Rust line replaces Python, which is deleted from the tree and kept only as history. Alpine x86_64 is a target. | maintainer | none |
-| OQ-2 | After the port, does the version live in `Cargo.toml` alone, with SKILL.md carrying no second number? Proposed: yes, and `--version` prints it. | maintainer | two version homes drift |
+| OQ-2 | After the port, does the version live in `rust-src\Cargo.toml` alone, with SKILL.md carrying no second number? Proposed: yes, and `--version` prints it. | maintainer | two version homes drift |
 | OQ-3 | Windows stdout from Python is encoded in the ANSI codepage; Rust writes UTF-8 with LF. Proposed: accept UTF-8 everywhere, document the deviation, and compare message streams as text in the differential harness. | maintainer | affects the differential harness |
 | OQ-4 | The gate decodes images with zxing-cpp. Proposed: keep the gate in Python on the development machine; it is not shipped and Alpine does not run it. | maintainer | gate portability |
 | OQ-5 | Alpine verification substrate: no Docker is installed on this machine. Candidates are an Alpine rootfs chroot inside WSL, or installing Docker. | maintainer | blocks the P3 gate |
@@ -214,6 +216,7 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | Per-platform binaries ship inside the skill folder: `bin\qr.exe` and `bin/qr` | install stays a folder copy, no build step on the target |
 | 2026-11-15 | Linux builds for `x86_64-unknown-linux-musl`, statically linked | Alpine and any glibc-free image must run it |
 | 2026-11-15 | The Rust line replaces Python; the Python generator is deleted at the port and kept only as history | one source of truth, no dual maintenance |
-| 2026-11-15 | Version 2.0.0 for the port | install artefact and dependency model change |
+| 2026-11-15 | Version 0.8.0 for the port, 0.7.0 for the Python line | the port changes the shipped artefact, and the skill is not at a stable 1.0.0 install model yet |
 | 2026-11-15 | Console subsystem on Windows | a shell must wait for the exit code and capture both streams |
 | 2026-11-15 | PNG compared by decode and dimensions, not by hash | two encoders produce different bytes for the same symbol |
+| 2026-11-15 | One folder per language: `python\`, `rust-src\`, with tools in `tools\`; `temp\` and `logs\` ignored | the root stays readable and each language has one home |

@@ -2,8 +2,10 @@ import os
 import subprocess
 import sys
 
-SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WORK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+TOOLS = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(TOOLS)
+SCRIPT = os.path.join(REPO, "python", "make-qr.py")
+WORK = os.path.join(TOOLS, ".artifacts")
 PY = sys.executable
 fails = []
 
@@ -14,7 +16,7 @@ os.makedirs(WORK, exist_ok=True)
 
 
 def run(args):
-    p = subprocess.run([PY, os.path.join(SKILL, "make-qr.py")] + args, cwd=WORK, capture_output=True, text=True)
+    p = subprocess.run([PY, SCRIPT] + args, cwd=WORK, capture_output=True, text=True)
     return p.returncode, p.stdout.strip(), p.stderr.strip()
 
 
