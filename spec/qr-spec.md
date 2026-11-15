@@ -23,7 +23,7 @@ Goals:
 - G3: a failed run never prints a path to a broken or absent file.
 - G4: install is a folder copy with no interpreter, package manager or build step on the target.
 
-Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 0.8.0.
+Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, ARM64 and macOS builds for 0.8.0. Decoding, other symbologies and image input are planned as separate crates after 0.8.0 and the public switch.
 
 ## 2. Functional requirements
 
@@ -157,6 +157,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
   - Applies: section 5 (one strict UTF-8 read, invalid input to `FAIL read`, no lossy path), section 6 (Result branches instead of `unwrap`), section 7 (release profile, `overflow-checks` if arithmetic is added), section 8 (the `-f` strip set only), section 10 (argv parity, path derivation, stdout encoding), section 11 (console subsystem choice), and section 12 (checklist and golden differential test).
   - Does not apply, with reason: section 1 (the program writes one file once, there is no loop of small writes), section 2 (no string building in a loop), section 3 (no per-iteration allocation in application code), section 4 (no bignum arithmetic), section 9 (no decode chain with error handlers).
   - A mechanical port must not add buffering, tables or decoders that the behaviour does not need.
+- Kanji mode is not reproduced. segno selects it for text that Shift-JIS encodes; the port writes UTF-8 byte mode instead, so such a payload can need one or more extra versions. `spec/corpus.txt` excludes those payloads and the decision history records the difference.
 - The port keeps the same message text and exit codes; deviations need a recorded decision.
 
 ## 9. Validation
@@ -188,7 +189,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `PT_INTERP` and no `NEEDED`, run on Alpine | gap, port phase |
 | D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | gap, port phase |
 
-Acceptance criteria for the port: the gate passes with the Rust binary in place of the script; a differential harness runs both implementations over the same fixture set and compares exit code, stdout, stderr, PNG payload decode and dimensions, and the page bytes. PNG bytes are not compared across implementations, because a different encoder produces a different valid file; QR-12 and NFR-07 cover what matters. The sweep runs on Windows and on Linux in `.github/workflows/ci.yml`, and the Linux binary also runs on Alpine x86_64 in that workflow.
+Acceptance criteria for the port: the gate passes with the Rust binary in place of the script; a differential harness runs both implementations over the same fixture set and compares exit code, stdout, stderr, PNG payload decode and dimensions, and the page bytes. PNG bytes are not compared across implementations, because a different encoder produces a different valid file; QR-12 and NFR-07 cover what matters. Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep runs on Windows and on Linux in `.github/workflows/ci.yml`, and the Linux binary also runs on Alpine x86_64 in that workflow.
 
 ## 10. Phases and gates
 
@@ -244,3 +245,5 @@ Gate 1 waits for approval of this sheet. OQ-1 to OQ-5 are closed.
 | 2026-11-15 | stdout and stderr are UTF-8 on both platforms, and the Python ANSI-codepage behaviour is not reproduced | paths and messages decode as text, and the harness compares text rather than bytes |
 | 2026-11-15 | The gate stays a Python tool on the development machine and never ships | decoding needs zxing-cpp, and the target has no interpreter after the port |
 | 2026-11-15 | Alpine verification moves into GitHub Actions against the committed binary: `readelf` for no NEEDED entry, then a run inside `alpine:3.21`, then the CLI matrix | the runner already has Docker, no local Docker or chroot is needed, and the check is reproducible for anyone with repo access |
+| 2026-11-15 | Kanji mode is not reproduced: Shift-JIS text is written as UTF-8 byte mode, which can add versions | a kanji segment needs a Shift-JIS table for a niche path, and the byte-mode symbol decodes to the same text |
+| 2026-11-15 | Decoding, other symbologies and image input wait for 0.8.0 and the public switch, then ship as separate crates | the port must land first, and each new capability carries its own dependency and review surface |

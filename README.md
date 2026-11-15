@@ -66,7 +66,7 @@ A QR that encodes a token, password, or provisioning string is a photographable 
 
 ## Port
 
-The Rust line replaces the Python generator at 0.8.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. The crate lives in `rust-src\` and the built files in `bin\`. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`. The P1 gate compares the port against `spec\argv-matrix.json` with `tools\argv_matrix.py`.
+The Rust line replaces the Python generator at 0.8.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. The crate lives in `rust-src\` and the built files in `bin\`. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`. The P1 gate compares the port against `spec\argv-matrix.json` with `tools\argv_matrix.py`, and against segno's symbol choice over `spec\corpus.txt` with `tools\parity.py`. One known difference: text that Shift-JIS could encode is written as UTF-8 bytes, so the symbol can be denser; kanji mode is not reproduced.
 
 ## Status
 

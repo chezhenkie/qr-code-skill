@@ -4,6 +4,9 @@ The corpus is committed as hex lines in spec/corpus.txt so both sides read the
 same bytes. The Python table is the reference; the Rust table comes from
 `cargo run --example versions < spec/corpus.txt`.
 
+Payloads where segno selects kanji mode are excluded: the port has no kanji
+segment and writes UTF-8 byte mode instead, so it can need more versions.
+
 Usage:
   python tools/parity.py --freeze     rewrite the corpus
   python tools/parity.py --table      print "version<TAB>modules<TAB>hex" per payload
@@ -53,8 +56,10 @@ def build_corpus():
     out = []
     for text in cases:
         try:
-            segno.make(text, error="m", micro=False, boost_error=False)
+            code = segno.make(text, error="m", micro=False, boost_error=False)
         except Exception:
+            continue
+        if code.mode == "kanji":
             continue
         out.append(text)
     return out
