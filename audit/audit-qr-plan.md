@@ -21,6 +21,8 @@ Scope of the release: fixes and tests on the Python line. No feature work. Versi
 | P-11 | Version 0.7.1 in its single home, a 0.7.1 changelog chapter: fixes only. Resync the install and record the hashes. | `SKILL.md`, `CHANGELOG.md`, install folder | Hashes match; `python tools\gate.py` green. | None. |
 | P-12 | Pin the `-f` strip set to CPython's measured 10-range set and gate it: a file holding `a` wrapped in U+001C and U+001F decodes back as `a`, and the same bytes inside the payload are kept. | `spec/qr-spec.md`, `tools/gate.py` | The gate check. It passes on the Python line today and fails a 1:1 Rust `trim` port. | One more check to keep green in P-07's rework. |
 
+M-09 does not reproduce as written: `-o noext` exits 1 with `FAIL store: Unknown file extension` and writes no page, so the extension is a format constraint of the writer, not a page defect. P-10 documents it in SKILL.md.
+
 ## Rejected
 
 - R-01 `D-05` seed examples referencing Desktop files: history, not product; the folder is documented as historical.

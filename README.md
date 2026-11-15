@@ -10,7 +10,7 @@ Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 |---|---|
 | `SKILL.md` | Skill contract: frontmatter (`name: qr`, description, version) and the instructions an agent reads. |
 | `python\make-qr.py` | The generator, shipped today. Text or file in, PNG out, optional viewer page. |
-| `tools\gate.py` | 15-check acceptance gate. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
+| `tools\gate.py` | 35-check acceptance gate. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
 | `rust-src\` | The Rust crate from P1 of the port. Empty until then. |
 | `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-22, non-functional requirements, interfaces, distribution, states, validation map, gates and open questions. |
 | `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
@@ -21,7 +21,7 @@ Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 
 The installed skill is `SKILL.md` plus the generator. Tools, spec, docs, seed and source folders are never shipped.
 
-The version has one home: `metadata.version` in `SKILL.md` until the port, then the crate manifest alone. The changelog chapter and any later tag derive from it. Current 0.7.0; the Rust line releases as 0.8.0.
+The version has one home: `metadata.version` in `SKILL.md` until the port, then the crate manifest alone. The changelog chapter and any later tag derive from it. Current 0.7.1; the Rust line releases as 0.8.0.
 
 ## Install
 
@@ -43,11 +43,11 @@ Gate only: `Pillow` and `zxing-cpp`, used to decode the produced PNG and compare
 python tools\gate.py
 ```
 
-Covers: text and file input, exact decode of both, whitespace stripping, the two printed paths, viewer page references the PNG and never contains the encoded text, pixel size at scale 10 and 12, and rejection of text plus file, empty text, oversize input (2331-byte limit at error level M), scale 0, and border 17.
+Covers 35 checks. Input and output: text and file input, exact decode of both, whitespace stripping including the CPython strip set, CRLF fidelity, the two printed paths, overwrite, nested parent creation, and the absolute path. Symbol: level M and a regular symbol for short and long payloads, pixel size at scale 10 and 12, the IEND check on a truncated file. Page: references the PNG, hides the payload, carries the viewport tag, escapes the title and never encodes it. Errors: text plus file, an empty text argument with a file, no source, empty text, oversize input (2331-byte limit at level M), scale 0, border 17, a missing or non-UTF-8 file, and a blocked output or page path.
 
 ## Behaviour
 
-Error correction is fixed at M. `--scale` 1-100 defaults to 10 pixels per module; `--border` 0-16 defaults to 4 quiet-zone modules. After writing, the script checks the PNG header against the symbol size, removes the file and exits 1 on a mismatch, so a printed path always matches the intended module count. Output paths resolve from the current directory and are printed absolute.
+Error correction is fixed at M and every symbol is a regular QR code, never Micro QR. `--scale` 1-100 defaults to 10 pixels per module; `--border` 0-16 defaults to 4 quiet-zone modules. `-f` reads UTF-8 without translating line endings, then strips surrounding whitespace. After writing, the script checks the PNG header against the symbol size and requires the IEND chunk, and removes the file and exits 1 on either failure, so a printed path always points at a complete image of the intended module count. Any filesystem failure ends with one `FAIL read:` or `FAIL write:` line and exit 1, never a traceback. Output paths resolve from the current directory and are printed absolute.
 
 The viewer page loads the PNG by file name, scales it to 70vmin (the shorter side of the viewport), and never contains the encoded text.
 
@@ -61,8 +61,10 @@ The Rust line replaces the Python generator at 0.8.0: one console binary for Win
 
 ## Status
 
-2026-11-13: built and gated here, installed at `~/.config/opencode/skills\qr`, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move. No open defects.
+2026-11-13: built and gated here, installed at `~/.config/opencode/skills\qr`, and confirmed as a loadable skill. Seed folder on the Desktop removed after the move.
 
 2026-11-15: put under git and pushed to a private repo. Installed files still hash-equal to the source. Gate passes 15 of 15.
 
 2026-11-15: process docs, spec sheet, changelog and license added. Layout split into `python\`, `tools\` and `rust-src\`; loose scratch output removed. Version set to 0.7.0, with 0.8.0 reserved for the Rust line.
+
+2026-11-15: 0.7.1 closes the audit findings; the gate passes 35 of 35 and the installed copy is hash-equal to the source.

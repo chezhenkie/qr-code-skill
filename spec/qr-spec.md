@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 0.7.0 Python, 0.8.0 Rust |
+| Version | 0.7.1 Python, 0.8.0 Rust |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -160,17 +160,26 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 
 | Requirement | Method | Evidence today |
 |---|---|---|
-| QR-01, QR-12 | gate decode | `decode matches` |
-| QR-02 | gate decode | `file exit 0`, `strips file whitespace`, `strip set boundary` |
-| QR-03 | gate exit code | `rejects text plus file` |
+| QR-01, QR-12 | gate decode | `decode matches`, `short payload regular 21 modules` |
+| QR-02 | gate decode | `file exit 0`, `strips file whitespace`, `crlf payload preserved`, `strip set boundary` |
+| QR-03 | gate exit code | `rejects text plus file`, `rejects empty text with file` |
+| QR-04 | gate exit code | `rejects no source` |
 | QR-05 | gate exit code | `rejects empty text` |
 | QR-06 | gate stdout | `prints one absolute path` |
+| QR-07 | gate file existence | `creates nested parents` |
 | QR-08, QR-09 | gate exit code | `rejects scale 0`, `rejects border 17` |
+| QR-10 | gate decode level and pixels | `short payload level M`, `url level M not boosted`, `short payload regular 21 modules` |
 | QR-11 | gate exit code and file absence | `rejects oversize` |
+| QR-13 | gate unit on a truncated file | `png tail detects truncation`; the size-mismatch branch is not injectable from outside and stays unproven |
 | QR-14 | gate stdout | `two paths png then html` |
-| QR-15 | gate page inspection | `viewer references png`, `viewer hides text` |
-| QR-12 at two scales | gate pixels | `scale 12 pixels`, `default scale 10 pixels` |
-| QR-04, QR-07, QR-10, QR-13, QR-16 to QR-22 | not yet gated | gap, to be closed by the audit plan |
+| QR-15 | gate page inspection | `viewer references png`, `viewer hides text`, `viewport tag present` |
+| QR-16 | gate page inspection | `title escaped in page`, `title never encoded` |
+| QR-17 | exit code asserted in every check | all 35 |
+| QR-18 | gate decode after a rewrite | `overwrite replaces the file` |
+| QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write` |
+| QR-20 | gate exit code | `help exits 0` |
+| QR-21 | gate decode with stdin attached | `stdin is ignored` |
+| QR-22 | not gated on the Python line | 0.8.0, port phase |
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | gap |
 | NFR-04, NFR-05, NFR-10 | measurement on the reference machine | gap, port phase |
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `PT_INTERP` and no `NEEDED`, run on Alpine | gap, port phase |
@@ -185,6 +194,7 @@ Acceptance criteria for the port: the gate passes with the Rust binary in place 
 | Define | closed 2026-11-15: problem, goals, non-goals, requirements |
 | Design | under review: architecture, interfaces, distribution, states, security, validation map |
 | Build, Python 0.7.0 | shipped and gated: 15 of 15 |
+| Build, Python 0.7.1 | gated: 35 of 35 |
 | Build, port increments | not started |
 | Release, 0.8.0 | not started |
 
@@ -226,3 +236,4 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | For 0.7.0 the version home is `metadata.version` in SKILL.md, because the line has no build manifest; from 0.8.0 the manifest rule applies | the manual asks for one home, and a script has no manifest yet |
 | 2026-11-15 | Regular QR only; Micro QR is never emitted | scanner support varies, and the common pure-Rust encoders do not emit Micro QR, so one symbol family keeps parity |
 | 2026-11-15 | The `-f` strip set is CPython's measured 10-range set, carried into the port as a table, not replaced by Rust `trim` | a patch release must not change the payload, and `trim` keeps U+001C to U+001F that CPython strips |
+| 2026-11-15 | 0.7.1 closes the audit findings and the contract now names the IEND check, the `FAIL read` and `FAIL write` lines, the page-failure state and the HTML-escaped title | the audit found the documented behaviour and the code apart, and the fixes need a written target |
