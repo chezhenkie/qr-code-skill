@@ -1,0 +1,12 @@
+[package]
+name = "qr"
+version = "0.8.0"
+edition = "2021"
+license = "MIT"
+description = "Offline QR code generator"
+
+[dependencies]
+qrcodegen = "1.8"
+
+[profile.release]
+overflow-checks = true

@@ -43,6 +43,28 @@ jobs:
       - run: python -m pip install segno pillow zxing-cpp
       - run: python tools/gate.py
 
+  parity:
+    name: symbol parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install segno
+      - if: hashFiles('rust-src/Cargo.toml') == ''
+        run: echo "rust-src is not committed yet, skipping"
+      - name: segno table
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python tools/parity.py --table > "$RUNNER_TEMP/py.tsv"
+      - name: rust table
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          cargo run --quiet --release --manifest-path rust-src/Cargo.toml --example versions < spec/corpus.txt > "$RUNNER_TEMP/rs.tsv"
+      - name: compare
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python tools/parity.py --check "$RUNNER_TEMP/rs.tsv"
+
   build-windows:
     name: build windows
     runs-on: windows-latest

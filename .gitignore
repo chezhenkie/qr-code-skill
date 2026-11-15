@@ -1,5 +1,6 @@
 python/__pycache__/
 tools/.artifacts/
+rust-src/target/
 temp/
 logs/
 __pycache__/
