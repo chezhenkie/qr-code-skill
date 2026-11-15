@@ -23,7 +23,9 @@ pub fn render(title: &str, png_name: &str) -> String {
             "<p>{title}</p>\n",
             "</body>\n",
             "</html>\n",
-        )
+        ),
+        title = title,
+        png = png,
     )
 }
 
