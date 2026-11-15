@@ -9,7 +9,7 @@
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
-| Related | SKILL.md, README.md, tools/gate.py, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
+| Related | SKILL.md, README.md, tools/gate.py, tools/argv_matrix.py, spec/argv-matrix.json, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
 | Scope | the shipped skill, SKILL.md and the generator; the gate is verification, not product |
 
 ## 1. Problem and goals
@@ -79,6 +79,7 @@ Components and responsibilities:
 - Generator: argument parsing, validation, symbol encoding, the post-write header check and the viewer page. Owns argument semantics, output naming, stdout and stderr text, exit codes.
 - Symbol encoder: module layout, mask selection, PNG raster. Owns module content and pixel output.
 - `tools/gate.py`: black-box harness that runs the shipped artefact, decodes its output and asserts the contract. Stays in Python, is not shipped.
+- `tools/argv_matrix.py`: runs the command-line cases in `spec/argv-matrix.json` against the shipped artefact or a target binary. The fixture is frozen from the Python line; the harness normalises the program name and scratch paths, collapses whitespace in stderr, and compares help stdout with whitespace collapsed because argparse wraps on the program name.
 - `SKILL.md`: the text an agent reads; owns discovery, usage guidance, the platform-to-binary rule and the secrets rule.
 - Viewer page: static HTML next to the PNG, no script, one image reference.
 
@@ -202,22 +203,22 @@ Acceptance criteria for the port: the gate passes with the Rust binary in place 
 
 Port increments, each closing at Gate 2:
 
-1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: the argv matrix matches on rc and stderr, and every fixture decodes to the same payload at the same dimensions.
+1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: `tools\argv_matrix.py --target` matches the 27 frozen cases in `spec\argv-matrix.json` on exit code, stdout and stderr, and every fixture decodes to the same payload at the same dimensions.
 2. P2: viewer page parity. Gate: the page is byte-equal to the Python output for the same title and PNG stem.
 3. P3: packaging. One crate in `rust-src\` builds both targets: Windows console build and musl static build, committed under `bin\`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
 4. P4: differential harness in the gate. Gate: the full fixture sweep is green on Windows and Linux, and the gate keeps its Python dependency set.
 
-Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a decision before P3.
+Gate 1 waits for approval of this sheet. OQ-1 to OQ-4 are closed; OQ-5 needs an environment decision before P3.
 
 ## 11. Open questions
 
 | Id | Question | Owner | Consequence if open |
 |---|---|---|---|
 | OQ-1 | Closed 2026-11-15: the skill ships per-platform binaries inside the qr folder, and the Rust line replaces Python, which is deleted from the tree and kept only as history. Alpine x86_64 is a target. | maintainer | none |
-| OQ-2 | After the port, does the version live in `rust-src\Cargo.toml` alone, with SKILL.md carrying no second number? Proposed: yes, and `--version` prints it. | maintainer | two version homes drift |
-| OQ-3 | Windows stdout from Python is encoded in the ANSI codepage; Rust writes UTF-8 with LF. Proposed: accept UTF-8 everywhere, document the deviation, and compare message streams as text in the differential harness. | maintainer | affects the differential harness |
-| OQ-4 | The gate decodes images with zxing-cpp. Proposed: keep the gate in Python on the development machine; it is not shipped and Alpine does not run it. | maintainer | gate portability |
-| OQ-5 | Alpine verification substrate: no Docker is installed on this machine. Candidates are an Alpine rootfs chroot inside WSL, or installing Docker. | maintainer | blocks the P3 gate |
+| OQ-2 | Closed 2026-11-15: after the port the version lives in `rust-src\Cargo.toml` alone, SKILL.md carries no second number, and `--version` prints the manifest value. | maintainer | none |
+| OQ-3 | Closed 2026-11-15: stdout and stderr are UTF-8 on every platform. The ANSI codepage on Windows is a property of the Python line and is not reproduced; the differential harness compares message streams as text and file bytes exactly. | maintainer | none |
+| OQ-4 | Closed 2026-11-15: the gate stays in Python on the development machine, is not shipped and does not run on Alpine. | maintainer | none |
+| OQ-5 | Open: Alpine verification substrate. No Docker on this machine; the intended route is an Alpine rootfs chroot inside the existing WSL Ubuntu, which needs that instance free and a rootfs download. | maintainer | blocks the P3 gate |
 
 ## 12. Decision history
 
@@ -239,3 +240,6 @@ Gate 1 waits for approval of this sheet. OQ-1 is closed; OQ-2 to OQ-5 need a dec
 | 2026-11-15 | Regular QR only; Micro QR is never emitted | scanner support varies, and the common pure-Rust encoders do not emit Micro QR, so one symbol family keeps parity |
 | 2026-11-15 | The `-f` strip set is CPython's measured 10-range set, carried into the port as a table, not replaced by Rust `trim` | a patch release must not change the payload, and `trim` keeps U+001C to U+001F that CPython strips |
 | 2026-11-15 | 0.7.1 closes the audit findings and the contract now names the IEND check, the `FAIL read` and `FAIL write` lines, the page-failure state and the HTML-escaped title | the audit found the documented behaviour and the code apart, and the fixes need a written target |
+| 2026-11-15 | After the port the version lives in the crate manifest alone, and `--version` prints it | two homes drift, and the binary can report the number it was built from |
+| 2026-11-15 | stdout and stderr are UTF-8 on both platforms, and the Python ANSI-codepage behaviour is not reproduced | paths and messages decode as text, and the harness compares text rather than bytes |
+| 2026-11-15 | The gate stays a Python tool on the development machine and never ships | decoding needs zxing-cpp, and the target has no interpreter after the port |

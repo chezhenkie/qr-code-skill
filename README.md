@@ -11,6 +11,8 @@ Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 | `SKILL.md` | Skill contract: frontmatter (`name: qr`, description, version) and the instructions an agent reads. |
 | `python\make-qr.py` | The generator, shipped today. Text or file in, PNG out, optional viewer page. |
 | `tools\gate.py` | 35-check acceptance gate. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
+| `tools\argv_matrix.py` | CLI parity harness: 27 cases frozen in `spec\argv-matrix.json`, normalised for program name and scratch paths. |
+| `spec\argv-matrix.json` | Frozen CLI surface from the Python line: exit code, stdout and stderr for each case. |
 | `rust-src\` | The Rust crate from P1 of the port. Empty until then. |
 | `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-22, non-functional requirements, interfaces, distribution, states, validation map, gates and open questions. |
 | `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
@@ -61,7 +63,7 @@ A QR that encodes a token, password, or provisioning string is a photographable 
 
 ## Port
 
-The Rust line replaces the Python generator at 0.8.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. The crate lives in `rust-src\` and the built files in `bin\`. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`.
+The Rust line replaces the Python generator at 0.8.0: one console binary for Windows and one statically linked musl binary for Linux, both inside the `qr` skill folder, with no interpreter on the target. The crate lives in `rust-src\` and the built files in `bin\`. Python is deleted at the port and kept only as history. Behaviour requirements are in `spec\qr-spec.md`; the traps to avoid are in `docs\python-to-rust-refactor-pitfalls.md`. The P1 gate compares the port against `spec\argv-matrix.json` with `tools\argv_matrix.py`.
 
 ## Status
 

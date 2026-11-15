@@ -1,0 +1,144 @@
+{
+  "cases": {
+    "ambiguous-h": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: ambiguous option: --h could match --help, --html",
+      "stdout": ""
+    },
+    "bad-int": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: argument --scale: invalid int value: 'abc'",
+      "stdout": ""
+    },
+    "dash-text": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
+    },
+    "double-dash": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
+    },
+    "dup-out": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/b.png\n"
+    },
+    "empty-text": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: empty input",
+      "stdout": ""
+    },
+    "file-missing": {
+      "rc": 1,
+      "stderr": "FAIL read: [Errno 2] No such file or directory: 'nope.txt'",
+      "stdout": ""
+    },
+    "file-ok": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/s.png\n"
+    },
+    "help": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER]\n                  [--html] [--title TITLE]\n                  [text]\n\nGenerate an offline QR code PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n"
+    },
+    "help-cluster": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER]\n                  [--html] [--title TITLE]\n                  [text]\n\nGenerate an offline QR code PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n"
+    },
+    "help-long": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER]\n                  [--html] [--title TITLE]\n                  [text]\n\nGenerate an offline QR code PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n"
+    },
+    "html-title": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n<dir>/qr.html\n"
+    },
+    "missing-value-scale": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: argument --scale: expected one argument",
+      "stdout": ""
+    },
+    "negative-border": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: --border must be 0-16",
+      "stdout": ""
+    },
+    "nested-out": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/a/b/c.png\n"
+    },
+    "no-args": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: provide text or --file",
+      "stdout": ""
+    },
+    "out-equals": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/a.png\n"
+    },
+    "out-looks-like-option": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: argument -o/--out: expected one argument",
+      "stdout": ""
+    },
+    "prefix-scale": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
+    },
+    "range-border": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: --border must be 0-16",
+      "stdout": ""
+    },
+    "range-scale": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: --scale must be 1-100",
+      "stdout": ""
+    },
+    "scale-equals": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
+    },
+    "text-default": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
+    },
+    "text-out": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/a.png\n"
+    },
+    "two-positionals": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: unrecognized arguments: y",
+      "stdout": ""
+    },
+    "unknown-cluster": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: unrecognized arguments: -xh",
+      "stdout": ""
+    },
+    "unknown-long": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [text] PROG: error: unrecognized arguments: --bogus",
+      "stdout": ""
+    }
+  },
+  "reference": {
+    "platform": "win32",
+    "python": "3.14.6",
+    "segno": "1.6.6"
+  }
+}
