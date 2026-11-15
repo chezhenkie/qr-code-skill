@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.0
+
+### New features
+
+#### All platforms
+
+* The generator is a native binary, `bin\qr.exe` on Windows and a statically linked `bin/qr` for Linux x86_64, so the target needs no interpreter or package at runtime.
+* `--version` prints the version the binary was built from.
+* One source tree and one manifest build both binaries.
+
+### Changes
+
+* The Python generator is removed; the skill ships `SKILL.md` and `bin/`.
+* The PNG is written by the tool itself as a 1-bit greyscale image. Symbols, dimensions and viewer pages match 0.7.1; the PNG bytes differ because the encoder changed.
+* `-o` writes a PNG whatever the extension; the 0.7.1 rule that required `.png` is gone.
+
 ## 0.7.1
 
 ### Fixes

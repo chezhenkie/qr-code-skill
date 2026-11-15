@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 0.7.1 Python, 0.8.0 Rust |
+| Version | 0.8.0 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -27,7 +27,7 @@ Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, ani
 
 ## 2. Functional requirements
 
-QR-22 is a target for the 0.8.0 binary. The Python line has no `--version` flag, so the requirement is not claimed for it.
+QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag.
 
 | Id | Required behaviour | Failure behaviour |
 |---|---|---|
@@ -56,21 +56,19 @@ QR-22 is a target for the 0.8.0 binary. The Python line has no `--version` flag,
 
 ## 3. Non-functional requirements
 
-Requirements marked 0.8.0 are targets for the Rust line and are not claimed for the Python line.
-
 | Id | Requirement |
 |---|---|
 | NFR-01 | No network at runtime: no socket, DNS or HTTP. |
-| NFR-02 | From 0.8.0 the generator needs no interpreter or package at runtime; until then it needs CPython 3.14 and segno. The gate's dependencies stay in the gate. |
+| NFR-02 | The generator needs no interpreter or package at runtime. The gate's dependencies stay in the gate. |
 | NFR-03 | Repository text is ASCII with LF endings; generated images and gate scratch are not committed. |
-| NFR-04 | One PNG of a URL of 60 characters completes in under 1 s on the reference machine. Guess, to be measured at the port. |
-| NFR-05 | Peak memory stays under 16 MiB for a 2000-byte payload. Guess, to be measured. |
+| NFR-04 | One PNG of a URL of 60 characters completes in under 1 s on the reference machine. Measured: 10.3 ms maximum over five runs. |
+| NFR-05 | Peak memory stays under 16 MiB for a 2000-byte payload. Measured: 0.97 MiB peak commit (job object) at the default scale. |
 | NFR-06 | Windows x86_64 and Linux x86_64 behave identically for file output, exit codes and file names. |
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
-| NFR-09 | From 0.8.0 the Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
-| NFR-10 | From 0.8.0 the Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Guess, to be measured. |
-| NFR-11 | From 0.8.0 the build uses one source tree and one version for both binaries, with no per-platform source differences. |
+| NFR-09 | The Linux binary is statically linked and carries no dynamic loader dependency; it starts on Alpine x86_64 with no package installed. |
+| NFR-10 | The Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Measured on the 0.8.0 artifacts: 244736 bytes for `qr.exe`, 648296 for `qr`. |
+| NFR-11 | The build uses one source tree and one version for both binaries, with no per-platform source differences. |
 
 ## 4. Architecture
 
@@ -79,7 +77,8 @@ Components and responsibilities:
 - Generator: argument parsing, validation, symbol encoding, the post-write header check and the viewer page. Owns argument semantics, output naming, stdout and stderr text, exit codes.
 - Symbol encoder: module layout, mask selection, PNG raster. Owns module content and pixel output.
 - `tools/gate.py`: black-box harness that runs the shipped artefact, decodes its output and asserts the contract. Stays in Python, is not shipped.
-- `tools/argv_matrix.py`: runs the command-line cases in `spec/argv-matrix.json` against the shipped artefact or a target binary. The fixture is frozen from the Python line; the harness normalises the program name and scratch paths, collapses whitespace in stderr, and compares help stdout with whitespace collapsed because argparse wraps on the program name.
+- `tools/argv_matrix.py`: runs the command-line cases in `spec/argv-matrix.json` against the shipped artefact or a target binary. The fixture is frozen from the binary; the harness normalises the program name and scratch paths, collapses whitespace in stderr, and compares help stdout with whitespace collapsed because the usage line wraps on the program name.
+- `tools/diff_python.py`: differential sweep over the corpus and a page set, comparing a binary with the Python line. Run on Windows and Linux before deletion, kept for a re-run against a script taken from git history.
 - `SKILL.md`: the text an agent reads; owns discovery, usage guidance, the platform-to-binary rule and the secrets rule.
 - Viewer page: static HTML next to the PNG, no script, one image reference.
 
@@ -87,9 +86,9 @@ Data flow: argv -> validated payload -> symbol -> PNG on disk -> header check ->
 
 There is no persistent state, no configuration file and no service. Each run is independent.
 
-Repository layout: the Python generator lives in `python\`, the gate in `tools\`, the crate in `rust-src\` from P1, the built binaries in `bin\`. `spec\`, `docs\` and `seed\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and the generator.
+Repository layout: the crate lives in `rust-src\`, the gate in `tools\`, the built binaries in `bin\`. `spec\`, `docs\` and `seed\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and `bin\`.
 
-The Python line is source of truth until the port lands. From the first Rust release the Python generator is deleted from the tree, git history is the only reference, and nothing reads or runs it any more. `seed/` keeps the original Desktop copies as history and is never a build input.
+The Python line was the source of truth until 0.8.0. The generator is deleted from the tree, git history is the only reference, and the product does not run it. `seed/` keeps the original Desktop copies as history and is never a build input.
 
 ## 5. Interfaces
 
@@ -108,7 +107,7 @@ Command line:
 
 Streams: stdout carries the absolute paths, one per line, and nothing else on success. stderr carries one line for a runtime failure, prefixed `FAIL`. Usage errors use the argparse-compatible text on stderr.
 
-Files: the PNG is the only required output; the page is optional. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`.
+Files: the PNG is the only required output; the page is optional. The output is always written as PNG, whatever the extension. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`.
 
 ### 5.1 Distribution
 
@@ -145,7 +144,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 - Network reach: none, by NFR-01.
 - Credentials: none used or stored.
 - Secret lifecycle: a QR of a token is a photographable secret. The tool stores nothing, prints nothing of the payload, and the operator deletes the artefact after scanning, per the SKILL.md rule.
-- Enforcement points: escaping for QR-16, base-name-only reference for QR-15, and the gate checks `viewer hides text` and `viewer references png` for both.
+- Enforcement points: escaping for QR-16, base-name-only reference for QR-15, and the gate checks `viewer hides text` and `viewer references png` on the shipped binary.
 - Supply chain: the binary is built from this repo and committed here, so the installed artefact is the reviewed artefact. Crates are pinned in `Cargo.lock`.
 
 ## 8. Implementation constraints
@@ -183,13 +182,13 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write` |
 | QR-20 | gate exit code | `help exits 0` |
 | QR-21 | gate decode with stdin attached | `stdin is ignored` |
-| QR-22 | not gated on the Python line | 0.8.0, port phase |
-| NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | gap |
-| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | gap, port phase |
-| D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `PT_INTERP` and no `NEEDED`, run on Alpine | gap, port phase |
-| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | gap, port phase |
+| QR-22 | gate exit code and stdout | `version prints one line` |
+| NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
+| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 244736 and 648296 bytes |
+| D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green on both builds (run 43731783541) |
+| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | both print 0.8.0; the release notes are pending a tag |
 
-Acceptance criteria for the port: the gate passes with the Rust binary in place of the script; a differential harness runs both implementations over the same fixture set and compares exit code, stdout, stderr, PNG payload decode and dimensions, and the page bytes. PNG bytes are not compared across implementations, because a different encoder produces a different valid file; QR-12 and NFR-07 cover what matters. Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep runs on Windows and on Linux in `.github/workflows/ci.yml`, and the Linux binary also runs on Alpine x86_64 in that workflow.
+Acceptance criteria for the port, and the evidence: the gate passes with the Rust binary in place of the script (36 of 36 on both builds); the CLI matrix matches 27 of 27 on both; the differential sweep compares exit code, printed names, payload decode, dimensions and page bytes over 91 payloads and 9 pages on Windows and Linux, with PNG bytes not compared across implementations because a different encoder produces a different valid file (QR-12 and NFR-07 cover what matters). Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep ran before the Python line was deleted (run 43732908549); `tools/diff_python.py` stays for a re-run against a script taken from history, and the permanent checks are the gate, the matrix and symbol parity. The Linux binary also runs on Alpine x86_64 in that workflow.
 
 ## 10. Phases and gates
 
@@ -199,17 +198,17 @@ Acceptance criteria for the port: the gate passes with the Rust binary in place 
 | Design | under review: architecture, interfaces, distribution, states, security, validation map |
 | Build, Python 0.7.0 | shipped and gated: 15 of 15 |
 | Build, Python 0.7.1 | gated: 35 of 35 |
-| Build, port increments | not started |
-| Release, 0.8.0 | not started |
+| Build, port increments | P1 to P4 closed |
+| Release, 0.8.0 | binaries committed and gated; tag and release notes pending |
 
 Port increments, each closing at Gate 2:
 
-1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate: `tools\argv_matrix.py --target` matches the 27 frozen cases in `spec\argv-matrix.json` on exit code, stdout and stderr, and every fixture decodes to the same payload at the same dimensions.
-2. P2: viewer page parity. Gate: the page is byte-equal to the Python output for the same title and PNG stem.
-3. P3: packaging. One crate in `rust-src\` builds both targets: Windows console build and musl static build, committed under `bin\`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
-4. P4: differential harness in the gate. Gate: the full fixture sweep is green on Windows and Linux, and the gate keeps its Python dependency set.
+1. P1: crate in `rust-src\`, encoder and CLI parity, no page. Gate met: `tools\argv_matrix.py` 27 of 27 on both binaries, fixture payloads decode at the same dimensions, and the gate passes 36 of 36 on the built binary.
+2. P2: viewer page parity. Gate met: page bytes equal over nine titles and names, including escaping, an empty title and control characters.
+3. P3: packaging. Gate met: both binaries committed under `bin\`, a scratch folder with `SKILL.md` and `bin` runs, `readelf` shows no `NEEDED`, the `alpine:3.21` job runs the static binary, sizes are 244736 and 648296 bytes, and the Python generator is deleted.
+4. P4: differential harness. Gate met by the pre-deletion sweep: 91 payloads and 9 pages on Windows and Linux, with no difference in exit code, printed names, decoded text, dimensions or page bytes. The tool stays in `tools\`; it is not a permanent CI job because the reference is gone.
 
-Gate 1 waits for approval of this sheet. OQ-1 to OQ-5 are closed.
+Gate 1 is closed; OQ-1 to OQ-5 are closed.
 
 ## 11. Open questions
 
@@ -247,3 +246,7 @@ Gate 1 waits for approval of this sheet. OQ-1 to OQ-5 are closed.
 | 2026-11-15 | Alpine verification moves into GitHub Actions against the committed binary: `readelf` for no NEEDED entry, then a run inside `alpine:3.21`, then the CLI matrix | the runner already has Docker, no local Docker or chroot is needed, and the check is reproducible for anyone with repo access |
 | 2026-11-15 | Kanji mode is not reproduced: Shift-JIS text is written as UTF-8 byte mode, which can add versions | a kanji segment needs a Shift-JIS table for a niche path, and the byte-mode symbol decodes to the same text |
 | 2026-11-15 | Decoding, other symbologies and image input wait for 0.8.0 and the public switch, then ship as separate crates | the port must land first, and each new capability carries its own dependency and review surface |
+| 2026-11-15 | The help text stays byte-equal to the 0.7.1 fixture, so `--version` is not listed; `SKILL.md` documents it and the gate checks it | the fixture is the CLI contract frozen while the Python line existed, and it cannot carry a flag the Python line lacks |
+| 2026-11-15 | The gate tests `bin\qr.exe` or `bin/qr` by default and carries its own PNG probe | the Python module it used is deleted at 0.8.0, and the gate must exercise the shipped artefact |
+| 2026-11-15 | The differential sweep runs once, before the Python line is deleted; CI keeps the frozen matrix, the gate and symbol parity | a deleted reference in CI would need segno and a copy of the old code on every run |
+| 2026-11-15 | `-o` no longer requires a `.png` extension; the writer always emits PNG | the format no longer comes from an extension lookup, and refusing a path over its extension has no user value |

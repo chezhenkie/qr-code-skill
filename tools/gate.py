@@ -1,18 +1,30 @@
-import importlib.util
+"""Black-box acceptance gate for the shipped generator.
+
+Runs bin\qr.exe on Windows and bin/qr elsewhere, or the binary given with
+--target. Needs zxing-cpp and Pillow to decode the produced PNGs.
+"""
 import os
+import re
 import shutil
+import struct
 import subprocess
 import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
-SCRIPT = os.path.join(REPO, "python", "make-qr.py")
 WORK = os.path.join(TOOLS, ".artifacts")
-PY = sys.executable
-TARGET = None
-if "--target" in sys.argv:
-    TARGET = os.path.abspath(sys.argv[sys.argv.index("--target") + 1])
-COMMAND = [TARGET] if TARGET else [PY, SCRIPT]
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+def default_target():
+    return os.path.join(REPO, "bin", "qr.exe" if os.name == "nt" else "qr")
+
+
+TARGET = (
+    os.path.abspath(sys.argv[sys.argv.index("--target") + 1])
+    if "--target" in sys.argv
+    else default_target()
+)
 fails = []
 
 try:
@@ -31,8 +43,23 @@ def art(*parts):
 
 
 def run(args, stdin=None):
-    p = subprocess.run(COMMAND + args, cwd=WORK, capture_output=True, text=True, stdin=stdin)
+    p = subprocess.run([TARGET] + args, cwd=WORK, capture_output=True, text=True, stdin=stdin)
     return p.returncode, p.stdout.strip(), p.stderr.strip()
+
+
+def png_probe(path):
+    """Return (IHDR size or None, whether the file ends with an IEND chunk)."""
+    with open(path, "rb") as handle:
+        head = handle.read(24)
+        end = os.fstat(handle.fileno()).st_size
+        tail = b""
+        if end >= 12:
+            handle.seek(end - 12)
+            tail = handle.read(12)
+    complete = len(tail) == 12 and tail[4:8] == b"IEND"
+    if len(head) < 24 or head[:8] != PNG_SIGNATURE or head[12:16] != b"IHDR":
+        return None, complete
+    return struct.unpack(">II", head[16:24]), complete
 
 
 def barcode(path):
@@ -162,15 +189,19 @@ code, out, err = run(["x", "-o", "blocked.png", "--html"])
 check("blocks page with FAIL write", code == 1 and out == "" and err.startswith("FAIL write") and "Traceback" not in err, f"{code} {err[:90]}")
 check("page failure keeps the PNG", os.path.exists(art("blocked.png")), "png removed")
 
-module_spec = importlib.util.spec_from_file_location("make_qr", SCRIPT)
-make_qr = importlib.util.module_from_spec(module_spec)
-module_spec.loader.exec_module(make_qr)
 trunc = art("trunc.png")
 with open(art("plain.png"), "rb") as src, open(trunc, "wb") as dst:
     dst.write(src.read(100))
-size, complete = make_qr.png_probe(trunc)
-full_size, full_complete = make_qr.png_probe(art("plain.png"))
+size, complete = png_probe(trunc)
+full_size, full_complete = png_probe(art("plain.png"))
 check("png tail detects truncation", size is not None and not complete and full_complete, f"{size} {complete} {full_complete}")
+
+code, out, err = run(["--version"])
+check(
+    "version prints one line",
+    code == 0 and len(out.splitlines()) == 1 and re.fullmatch(r"\d+\.\d+\.\d+", out) is not None and err == "",
+    f"{code} {out!r} {err[:40]}",
+)
 
 code, out, err = run(["x", "--scale", "0", "-o", "bad.png"])
 check("rejects scale 0", code == 2 and "--scale must be 1-100" in err, f"{code} {err[-60:]}")

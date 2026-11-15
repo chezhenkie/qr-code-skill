@@ -1,13 +1,16 @@
 """Freeze and check the command-line surface of the generator.
 
 The fixture in spec/argv-matrix.json records exit code, stdout and stderr for
-each case, produced by the Python line. After the port the same cases run
-against the Rust binary; the matrix is the P1 gate for CLI parity.
+each case. Cases run against bin\\qr.exe on Windows and bin/qr elsewhere; the
+harness normalises the program name and scratch paths, collapses whitespace in
+stderr, and compares help stdout with whitespace collapsed because the usage
+line wraps on the program name.
 
 Usage:
-  python tools/argv_matrix.py --freeze              rewrite the fixture from the Python line
-  python tools/argv_matrix.py                       check the Python line against the fixture
-  python tools/argv_matrix.py --target bin/qr.exe   check a binary against the fixture
+  python tools/argv_matrix.py                         check the shipped binary
+  python tools/argv_matrix.py --target PATH           check another binary
+  python tools/argv_matrix.py --freeze                rewrite the fixture from the shipped binary
+  python tools/argv_matrix.py --freeze --target PATH  rewrite it from another binary
 """
 import json
 import os
@@ -18,9 +21,12 @@ import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOLS)
-SCRIPT = os.path.join(REPO, "python", "make-qr.py")
 FIXTURE = os.path.join(REPO, "spec", "argv-matrix.json")
 WORK = os.path.join(TOOLS, ".artifacts", "matrix")
+
+
+def default_target():
+    return os.path.join(REPO, "bin", "qr.exe" if os.name == "nt" else "qr")
 
 CASES = [
     {"id": "no-args", "argv": []},
@@ -109,10 +115,10 @@ def verify(prefix, expect, quiet=False):
 
 
 def freeze(prefix):
+    version = subprocess.run(prefix + ["--version"], capture_output=True, text=True)
     data = {
         "reference": {
-            "python": sys.version.split()[0],
-            "segno": __import__("segno").__version__,
+            "program": version.stdout.strip() if version.returncode == 0 else "unknown",
             "platform": sys.platform,
         },
         "cases": {case["id"]: run_case(case, prefix) for case in CASES},
@@ -124,16 +130,13 @@ def freeze(prefix):
 
 
 def main(argv):
-    if "--freeze" in argv:
-        freeze([sys.executable, SCRIPT])
-        return 0
-    prefix = [sys.executable, SCRIPT]
+    target = default_target()
     if "--target" in argv:
-        target = argv[argv.index("--target") + 1]
-        if target.endswith(".py"):
-            prefix = [sys.executable, os.path.abspath(target)]
-        else:
-            prefix = [os.path.abspath(target)]
+        target = os.path.abspath(argv[argv.index("--target") + 1])
+    prefix = [os.path.abspath(target)]
+    if "--freeze" in argv:
+        freeze(prefix)
+        return 0
     with open(FIXTURE, encoding="utf-8") as fh:
         expect = json.load(fh)["cases"]
     bad = verify(prefix, expect)

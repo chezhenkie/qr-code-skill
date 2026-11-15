@@ -25,7 +25,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - run: python -m pip install segno
       - run: python tools/argv_matrix.py
 
   gate:
@@ -40,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - run: python -m pip install segno pillow zxing-cpp
+      - run: python -m pip install pillow zxing-cpp
       - run: python tools/gate.py
 
   parity:
@@ -51,7 +50,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-      - run: python -m pip install segno
       - if: hashFiles('rust-src/Cargo.toml') == ''
         run: echo "rust-src is not committed yet, skipping"
       - name: segno table
@@ -86,13 +84,10 @@ jobs:
         run: python .github/pe_subsystem.py rust-src/target/release/qr.exe
       - name: gate dependencies
         if: hashFiles('rust-src/Cargo.toml') != ''
-        run: python -m pip install segno pillow zxing-cpp
+        run: python -m pip install pillow zxing-cpp
       - name: gate on the exe
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: python tools/gate.py --target rust-src/target/release/qr.exe
-      - name: differential sweep against the Python line
-        if: hashFiles('python/make-qr.py') != ''
-        run: python tools/diff_python.py --target rust-src/target/release/qr.exe
       - name: cli matrix on the exe
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: python tools/argv_matrix.py --target rust-src/target/release/qr.exe
@@ -136,22 +131,17 @@ jobs:
           docker run --rm -v "$PWD/rust-src/target/x86_64-unknown-linux-musl/release:/app:ro" alpine:3.21 /app/qr --version
       - name: gate dependencies
         if: hashFiles('rust-src/Cargo.toml') != ''
-        run: python -m pip install segno pillow zxing-cpp
+        run: python -m pip install pillow zxing-cpp
       - name: gate on the static binary
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: |
           chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
           python tools/gate.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
-      - name: differential sweep against the Python line
-        if: hashFiles('python/make-qr.py') != ''
-        run: |
-          chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
-          python tools/diff_python.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
       - name: cli matrix on the static binary
         if: hashFiles('rust-src/Cargo.toml') != ''
         run: |
           chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
-          python3 tools/argv_matrix.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
+          python tools/argv_matrix.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
       - uses: actions/upload-artifact@v4
         if: hashFiles('rust-src/Cargo.toml') != ''
         with:
