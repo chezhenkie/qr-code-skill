@@ -13,6 +13,7 @@ Source repo: https://github.com/chezhenkie/qr-code-skill, private.
 | `tools\gate.py` | 35-check acceptance gate. Rebuilds `tools\.artifacts` on every run and exits non-zero on any failure. |
 | `tools\argv_matrix.py` | CLI parity harness: 27 cases frozen in `spec\argv-matrix.json`, normalised for program name and scratch paths. |
 | `spec\argv-matrix.json` | Frozen CLI surface from the Python line: exit code, stdout and stderr for each case. |
+| `.github\workflows\ci.yml` | Runs the gate and the CLI matrix on Windows and Linux, builds both binaries, and proves the Linux one runs in Alpine. |
 | `rust-src\` | The Rust crate from P1 of the port. Empty until then. |
 | `spec\qr-spec.md` | Behaviour contract: requirements QR-01 to QR-22, non-functional requirements, interfaces, distribution, states, validation map, gates and open questions. |
 | `docs\` | Process manuals: spec sheet design and review, audit process, changelog and release, Python to Rust pitfalls. |
@@ -50,6 +51,8 @@ python tools\gate.py
 ```
 
 Covers 35 checks. Input and output: text and file input, exact decode of both, whitespace stripping including the CPython strip set, CRLF fidelity, the two printed paths, overwrite, nested parent creation, and the absolute path. Symbol: level M and a regular symbol for short and long payloads, pixel size at scale 10 and 12, the IEND check on a truncated file. Page: references the PNG, hides the payload, carries the viewport tag, escapes the title and never encodes it. Errors: text plus file, an empty text argument with a file, no source, empty text, oversize input (2331-byte limit at level M), scale 0, border 17, a missing or non-UTF-8 file, and a blocked output or page path.
+
+CI in `.github\workflows\ci.yml` runs this gate and the CLI matrix on Windows and Linux, builds the crate for both targets, and checks the Linux binary with `readelf` and inside an `alpine:3.21` container. Both binaries are built on the runners, so no local Rust toolchain or WSL is needed.
 
 ## Behaviour
 

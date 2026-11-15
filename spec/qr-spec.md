@@ -188,7 +188,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `PT_INTERP` and no `NEEDED`, run on Alpine | gap, port phase |
 | D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | gap, port phase |
 
-Acceptance criteria for the port: the gate passes with the Rust binary in place of the script; a differential harness runs both implementations over the same fixture set and compares exit code, stdout, stderr, PNG payload decode and dimensions, and the page bytes. PNG bytes are not compared across implementations, because a different encoder produces a different valid file; QR-12 and NFR-07 cover what matters. The sweep runs on Windows and on Linux, and the Linux binary also runs on Alpine x86_64.
+Acceptance criteria for the port: the gate passes with the Rust binary in place of the script; a differential harness runs both implementations over the same fixture set and compares exit code, stdout, stderr, PNG payload decode and dimensions, and the page bytes. PNG bytes are not compared across implementations, because a different encoder produces a different valid file; QR-12 and NFR-07 cover what matters. The sweep runs on Windows and on Linux in `.github/workflows/ci.yml`, and the Linux binary also runs on Alpine x86_64 in that workflow.
 
 ## 10. Phases and gates
 
@@ -208,7 +208,7 @@ Port increments, each closing at Gate 2:
 3. P3: packaging. One crate in `rust-src\` builds both targets: Windows console build and musl static build, committed under `bin\`; SKILL.md rewritten to call the binary per platform; Python generator deleted. Gate: install into an empty scratch folder, run both, `readelf` static proof, Alpine run, size and digest record.
 4. P4: differential harness in the gate. Gate: the full fixture sweep is green on Windows and Linux, and the gate keeps its Python dependency set.
 
-Gate 1 waits for approval of this sheet. OQ-1 to OQ-4 are closed; OQ-5 needs an environment decision before P3.
+Gate 1 waits for approval of this sheet. OQ-1 to OQ-5 are closed.
 
 ## 11. Open questions
 
@@ -218,7 +218,7 @@ Gate 1 waits for approval of this sheet. OQ-1 to OQ-4 are closed; OQ-5 needs an 
 | OQ-2 | Closed 2026-11-15: after the port the version lives in `rust-src\Cargo.toml` alone, SKILL.md carries no second number, and `--version` prints the manifest value. | maintainer | none |
 | OQ-3 | Closed 2026-11-15: stdout and stderr are UTF-8 on every platform. The ANSI codepage on Windows is a property of the Python line and is not reproduced; the differential harness compares message streams as text and file bytes exactly. | maintainer | none |
 | OQ-4 | Closed 2026-11-15: the gate stays in Python on the development machine, is not shipped and does not run on Alpine. | maintainer | none |
-| OQ-5 | Open: Alpine verification substrate. No Docker on this machine; the intended route is an Alpine rootfs chroot inside the existing WSL Ubuntu, which needs that instance free and a rootfs download. | maintainer | blocks the P3 gate |
+| OQ-5 | Closed 2026-11-15: Alpine verification runs in GitHub Actions. The workflow checks `bin/qr` with `readelf` for a NEEDED entry and runs it in an `alpine:3.21` container, then replays the CLI matrix against the static binary. No local Docker or chroot is needed, and WSL stays a development environment for rustc. | maintainer | none |
 
 ## 12. Decision history
 
@@ -243,3 +243,4 @@ Gate 1 waits for approval of this sheet. OQ-1 to OQ-4 are closed; OQ-5 needs an 
 | 2026-11-15 | After the port the version lives in the crate manifest alone, and `--version` prints it | two homes drift, and the binary can report the number it was built from |
 | 2026-11-15 | stdout and stderr are UTF-8 on both platforms, and the Python ANSI-codepage behaviour is not reproduced | paths and messages decode as text, and the harness compares text rather than bytes |
 | 2026-11-15 | The gate stays a Python tool on the development machine and never ships | decoding needs zxing-cpp, and the target has no interpreter after the port |
+| 2026-11-15 | Alpine verification moves into GitHub Actions against the committed binary: `readelf` for no NEEDED entry, then a run inside `alpine:3.21`, then the CLI matrix | the runner already has Docker, no local Docker or chroot is needed, and the check is reproducible for anyone with repo access |

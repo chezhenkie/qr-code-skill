@@ -1,0 +1,127 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cli:
+    name: cli ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install segno
+      - run: python tools/argv_matrix.py
+
+  gate:
+    name: gate ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install segno pillow zxing-cpp
+      - run: python tools/gate.py
+
+  build-windows:
+    name: build windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - if: hashFiles('rust-src/Cargo.toml') == ''
+        run: echo "rust-src is not committed yet, skipping"
+      - name: build
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: cargo build --release --manifest-path rust-src/Cargo.toml
+      - name: console subsystem
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python .github/pe_subsystem.py rust-src/target/release/qr.exe
+      - name: cli matrix on the exe
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python tools/argv_matrix.py --target rust-src/target/release/qr.exe
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        with:
+          name: qr-windows
+          path: rust-src/target/release/qr.exe
+          if-no-files-found: error
+
+  build-linux:
+    name: build linux musl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - if: hashFiles('rust-src/Cargo.toml') == ''
+        run: echo "rust-src is not committed yet, skipping"
+      - name: build
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --release --manifest-path rust-src/Cargo.toml --target x86_64-unknown-linux-musl
+      - name: no dynamic loader dependency
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          file rust-src/target/x86_64-unknown-linux-musl/release/qr
+          if readelf -d rust-src/target/x86_64-unknown-linux-musl/release/qr | grep -q NEEDED; then
+            echo "the binary needs shared libraries"
+            exit 1
+          fi
+      - name: runs on alpine with nothing installed
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
+          docker run --rm -v "$PWD/rust-src/target/x86_64-unknown-linux-musl/release:/app:ro" alpine:3.21 /app/qr --version
+      - name: cli matrix on the static binary
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          chmod +x rust-src/target/x86_64-unknown-linux-musl/release/qr
+          python3 tools/argv_matrix.py --target rust-src/target/x86_64-unknown-linux-musl/release/qr
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        with:
+          name: qr-linux-musl
+          path: rust-src/target/x86_64-unknown-linux-musl/release/qr
+          if-no-files-found: error
+
+  shipped:
+    name: shipped binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - if: hashFiles('bin/qr') == '' && hashFiles('bin/qr.exe') == ''
+        run: echo "bin is not committed yet, skipping"
+      - name: committed linux binary is static
+        if: hashFiles('bin/qr') != ''
+        run: |
+          if readelf -d bin/qr | grep -q NEEDED; then
+            echo "bin/qr needs shared libraries"
+            exit 1
+          fi
+      - name: committed linux binary runs on alpine
+        if: hashFiles('bin/qr') != ''
+        run: |
+          chmod +x bin/qr
+          docker run --rm -v "$PWD/bin:/app:ro" alpine:3.21 /app/qr --version

@@ -67,7 +67,7 @@ check("decode matches", decode(art("plain.png")) == url, str(decode(art("plain.p
 secret = "tk_0123456789abcdef0123456789abcdef"
 with open(art("secret.txt"), "w", encoding="utf-8") as fh:
     fh.write("  " + secret + "\n")
-code, out, err = run(["-f", "secret.txt", "-o", "deep\\secret.png", "--scale", "12", "--html", "--title", "phone token"])
+code, out, err = run(["-f", "secret.txt", "-o", os.path.join("deep", "secret.png"), "--scale", "12", "--html", "--title", "phone token"])
 paths = out.splitlines()
 check("file exit 0", code == 0, err)
 check("two paths png then html", len(paths) == 2 and paths[0].endswith(".png") and paths[1].endswith(".html"), out)
