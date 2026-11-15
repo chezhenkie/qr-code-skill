@@ -92,6 +92,30 @@ check("url level M not boosted", code == 0 and ec_level(os.path.join(WORK, "url1
 
 check("viewport tag present", 'name="viewport"' in page, page[:120])
 
+crlf = os.path.join(WORK, "crlf.txt")
+with open(crlf, "wb") as fh:
+    fh.write(b"a\r\nb\r\n")
+code, out, err = run(["-f", "crlf.txt", "-o", "crlf.png"])
+check("crlf payload preserved", code == 0 and decode(os.path.join(WORK, "crlf.png")) == "a\r\nb", f"{code} {err}")
+
+code, out, err = run(["-f", "missing.txt", "-o", "missing.png"])
+check("missing file is one FAIL read line", code == 1 and out == "" and err.startswith("FAIL read") and "Traceback" not in err and not os.path.exists(os.path.join(WORK, "missing.png")), f"{code} {err[:90]}")
+
+with open(os.path.join(WORK, "latin1.bin"), "wb") as fh:
+    fh.write(b"\xff\xfe\x00bad")
+code, out, err = run(["-f", "latin1.bin", "-o", "latin1.png"])
+check("non utf8 file is one FAIL read line", code == 1 and out == "" and err.startswith("FAIL read") and "Traceback" not in err, f"{code} {err[:90]}")
+
+with open(os.path.join(WORK, "blocker"), "w", encoding="utf-8") as fh:
+    fh.write("x")
+code, out, err = run(["x", "-o", "blocker/hidden.png"])
+check("blocks output parent with FAIL write", code == 1 and out == "" and err.startswith("FAIL write") and "Traceback" not in err, f"{code} {err[:90]}")
+
+os.makedirs(os.path.join(WORK, "blocked.html"), exist_ok=True)
+code, out, err = run(["x", "-o", "blocked.png", "--html"])
+check("blocks page with FAIL write", code == 1 and out == "" and err.startswith("FAIL write") and "Traceback" not in err, f"{code} {err[:90]}")
+check("page failure keeps the PNG", os.path.exists(os.path.join(WORK, "blocked.png")), "png removed")
+
 import importlib.util  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("make_qr", SCRIPT)

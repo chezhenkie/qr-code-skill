@@ -71,11 +71,15 @@ def main() -> int:
         parser.error("--scale must be 1-100")
     if not 0 <= args.border <= 16:
         parser.error("--border must be 0-16")
-    if args.file and args.text is not None:
+    if args.file is not None and args.text is not None:
         parser.error("give text or --file, not both")
-    if args.file:
-        with open(args.file, "r", encoding="utf-8") as handle:
-            data = handle.read().strip()
+    if args.file is not None:
+        try:
+            with open(args.file, "r", encoding="utf-8", newline="") as handle:
+                data = handle.read().strip()
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"FAIL read: {exc}", file=sys.stderr)
+            return 1
     elif args.text is not None:
         data = args.text
     else:
@@ -84,14 +88,24 @@ def main() -> int:
         parser.error("empty input")
 
     out = os.path.abspath(args.out)
-    parent = os.path.dirname(out)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
+    page = os.path.splitext(out)[0] + ".html" if args.html else None
+
+    try:
+        parent = os.path.dirname(out)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+    except OSError as exc:
+        print(f"FAIL write: {exc}", file=sys.stderr)
+        return 1
+
     try:
         code = segno.make(data, error="m", boost_error=False, micro=False)
         code.save(out, scale=args.scale, border=args.border)
     except (DataOverflowError, ValueError) as exc:
         print(f"FAIL store: {exc}", file=sys.stderr)
+        return 1
+    except OSError as exc:
+        print(f"FAIL write: {exc}", file=sys.stderr)
         return 1
 
     want = code.symbol_size(scale=args.scale, border=args.border)
@@ -104,12 +118,17 @@ def main() -> int:
         discard(out)
         print("FAIL png tail: missing IEND", file=sys.stderr)
         return 1
-    print(out)
 
-    if args.html:
-        page = os.path.splitext(out)[0] + ".html"
-        with open(page, "w", encoding="utf-8", newline="\n") as handle:
-            handle.write(VIEWER.format(title=html.escape(args.title), name=html.escape(os.path.basename(out))))
+    if page is not None:
+        try:
+            with open(page, "w", encoding="utf-8", newline="\n") as handle:
+                handle.write(VIEWER.format(title=html.escape(args.title), name=html.escape(os.path.basename(out))))
+        except OSError as exc:
+            print(f"FAIL write: {exc}", file=sys.stderr)
+            return 1
+
+    print(out)
+    if page is not None:
         print(page)
     return 0
 

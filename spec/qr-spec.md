@@ -129,8 +129,9 @@ Breaking-change rule: flag names, defaults, ranges, message text, path derivatio
 | Version | `--version` | one version line on stdout, exit 0 |
 | Usage error | conflicting or missing source, out-of-range number, unknown option | argparse-compatible text on stderr, exit 2, nothing written |
 | Capacity failure | payload over level M capacity | one `FAIL store:` line on stderr, exit 1, no file |
-| Size mismatch | header dimensions differ from the symbol size | one `FAIL png size` line on stderr, file removed, exit 1 |
-| Filesystem failure | unwritable path, unreadable input | one error line on stderr, exit 1, no partial output |
+| Size mismatch | header dimensions differ from the symbol size, or the file has no IEND chunk | one `FAIL png size` or `FAIL png tail` line on stderr, file removed, exit 1 |
+| Filesystem failure | unwritable output path, unreadable or non-UTF-8 input | one `FAIL read` or `FAIL write` line on stderr, exit 1, no traceback |
+| Page failure | the PNG is written and the page path is blocked | one `FAIL write` line on stderr, exit 1, PNG kept, stdout empty |
 
 Recovery is always a corrected re-run; the tool holds no state that a failed run can corrupt.
 
