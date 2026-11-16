@@ -48,17 +48,17 @@
     "help": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; requires --html\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "help-cluster": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; requires --html\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "help-long": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; requires --html\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "html-title": {
       "rc": 0,
@@ -93,6 +93,11 @@
     "out-looks-like-option": {
       "rc": 2,
       "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: argument -o/--out: expected one argument",
+      "stdout": ""
+    },
+    "page-clash": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: page path equals the PNG path: <dir>/clash.html",
       "stdout": ""
     },
     "prefix-scale": {
@@ -135,6 +140,11 @@
       "stderr": "",
       "stdout": "<dir>/a.png\n"
     },
+    "title-without-html": {
+      "rc": 2,
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: --title requires --html",
+      "stdout": ""
+    },
     "two-positionals": {
       "rc": 2,
       "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: unrecognized arguments: y",
@@ -149,10 +159,15 @@
       "rc": 2,
       "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: unrecognized arguments: --bogus",
       "stdout": ""
+    },
+    "version": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "1.2.0\n"
     }
   },
   "reference": {
     "platform": "win32",
-    "program": "0.10.1"
+    "program": "1.2.0"
   }
 }
