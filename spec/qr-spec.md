@@ -91,9 +91,9 @@ Data flow: argv -> validated payload -> symbol -> painted text on stdout by defa
 
 There is no persistent state, no configuration file and no service. Each run is independent.
 
-Repository layout: the crate lives in `rust-src\`, the gate in `tools\`, the built binaries in `bin\`. `spec\`, `docs\` and `seed\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and `bin\`.
+Repository layout: the crate lives in `rust-src\`, the gate in `tools\`, the built binaries in `bin\`. `spec\` and `docs\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and `bin\`.
 
-The Python line was the source of truth until 0.8.0. The generator is deleted from the tree, git history is the only reference, and the product does not run it. `seed/` keeps the original Desktop copies as history and is never a build input.
+The Python line was the source of truth until 0.8.0. The generator is deleted from the tree, git history holds the only copies, and the product does not run it.
 
 ## 5. Interfaces
 

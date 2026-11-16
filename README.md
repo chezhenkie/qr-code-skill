@@ -27,7 +27,6 @@ Both samples come from `bin/qr.exe --save "https://example.com" -o docs/demo-qr.
 | `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
 | `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
 | `docs/` | Process manuals and the sample images |
-| `seed/` | The original Python script, kept as history |
 | `CHANGELOG.md` | Version history |
 
 ## Install
