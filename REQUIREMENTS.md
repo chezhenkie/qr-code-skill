@@ -20,6 +20,7 @@ Intel macOS is not shipped; build from `rust-src/`.
 - No interpreter, package manager, runtime library or configuration file.
 - No temporary directory use. A run with no output option writes nothing; save mode writes only the named PNG and the optional page.
 - A writable output path in save mode; missing parent folders are created.
+- File input through `-f` is limited to 1 MiB of UTF-8.
 
 ## Terminal display
 

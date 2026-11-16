@@ -4,8 +4,8 @@
 |---|---|
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
-| Status | approved |
-| Version | 1.1.1 |
+| Status | implemented |
+| Version | 1.2.0 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -33,7 +33,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | Id | Required behaviour | Failure behaviour |
 |---|---|---|
 | QR-01 | A single positional argument is encoded unchanged: no strip, no case change, no re-encoding. | none |
-| QR-02 | `-f PATH` reads the file as UTF-8, without line-ending translation, and strips leading and trailing whitespace before encoding. The whitespace set is CPython's, measured on 3.14.6: U+0009 to U+000D, U+001C to U+0020, U+0085, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, 29 code points in 10 ranges. Rust `str::trim` follows Unicode White_Space and keeps U+001C to U+001F, so the port carries this table. | QR-19 |
+| QR-02 | `-f PATH` reads the file as UTF-8, without line-ending translation, and strips leading and trailing whitespace before encoding. The whitespace set is CPython's, measured on 3.14.6: U+0009 to U+000D, U+001C to U+0020, U+0085, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, 29 code points in 10 ranges. Rust `str::trim` follows Unicode White_Space and keeps U+001C to U+001F, so the port carries this table. A file above 1 MiB is refused before it is read whole. | QR-19 |
 | QR-03 | Text and `-f` are mutually exclusive. | exit 2, stderr `give text or --file, not both`, nothing written |
 | QR-04 | Neither text nor `-f` is given. | exit 2, stderr `provide text or --file`, nothing written |
 | QR-05 | The payload is empty, either as an empty argument or a file that strips to nothing. | exit 2, stderr `empty input`, nothing written |
@@ -46,16 +46,16 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
 | QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size, and the file must end with an IEND chunk. | on a size mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>`; without IEND the file is removed, exit 1, stderr `FAIL png tail: missing IEND` |
 | QR-14 | In save mode, stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output in save mode |
-| QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by file name; it contains no payload text, no script and no external asset; the image is scaled to 70vmin, the shorter side of the viewport. It selects save mode, per QR-24. | QR-19 |
-| QR-16 | `--title` sets the page title and caption only, HTML-escaped, and is never encoded. It selects save mode, per QR-24. | none; any string is accepted |
+| QR-15 | `--html` writes a page named after the PNG stem, next to the PNG, referencing the image by its percent-encoded file name; it contains no payload text, no script and no external asset; the image is scaled to 70vmin, the shorter side of the viewport. A page path equal to the PNG path is a usage error. It selects save mode, per QR-24. | exit 2, stderr `page path equals the PNG path`, nothing written |
+| QR-16 | `--title` sets the page title and caption only, HTML-escaped, and is never encoded. It requires `--html`. | exit 2, stderr `--title requires --html` |
 | QR-17 | Exit 0 on success, 1 on a runtime failure, 2 on a usage error. | n/a |
 | QR-18 | An existing output file is replaced. | QR-19 |
-| QR-19 | Any filesystem failure, including an unreadable, missing or non-UTF-8 `-f` file, ends with a one-line error on stderr and exit 1, with no traceback and no partial file left behind. | n/a |
+| QR-19 | Any filesystem failure, including an unreadable, missing or non-UTF-8 `-f` file, and an input file above 1 MiB, ends with a one-line error on stderr and exit 1, with no traceback and no partial file left behind. | n/a |
 | QR-20 | `-h` and `--help` print usage on stdout and exit 0; the text lists every option, `--version` included, in the option list and the usage line. An unknown option is a usage error. | exit 2 for unknown options |
 | QR-21 | Standard input is never read. | n/a |
 | QR-22 | `--version` prints the single version string and exits 0, on every build. | exit 0 always |
 | QR-23 | With no output option the symbol is printed to stdout as UTF-8 text, quiet zone included, black modules on a painted light background, two module rows per text row. It writes no file, creates no directory and prints no path. | a failed stdout write is one `FAIL write: stdout` line and exit 1 |
-| QR-24 | `--save` selects save mode and writes the PNG at `-o`, default `qr.png`. `-o`, `--scale`, `--html` and `--title` also select save mode; `-f` and `--border` do not. | QR-19 |
+| QR-24 | `--save` selects save mode and writes the PNG at `-o`, default `qr.png`. `-o`, `--scale` and `--html` also select save mode; `-f` and `--border` do not. | QR-19 |
 
 ## 3. Non-functional requirements
 
@@ -70,7 +70,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
-| NFR-10 | The Windows and macOS binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.1.1 artifacts: 250368 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 657120 for `qr`, 716056 for `qr-arm64`, 536000 for `qr-macos-arm64`. |
+| NFR-10 | The Windows binaries link the C runtime statically, and the import table names no VCRUNTIME140, MSVCP140 or api-ms-win-crt-* entry, so neither Windows nor macOS needs a runtime redistributable. Size under 4 MB per binary. Measured on the 1.2.0 artifacts: 361472 bytes for `qr.exe`, 346112 for `qr-arm64.exe`, 665352 for `qr`, 716608 for `qr-arm64`, 555008 for `qr-macos-arm64`. |
 | NFR-11 | The build uses one source tree and one version for all five binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
@@ -81,7 +81,8 @@ Components and responsibilities:
 - Generator: argument parsing, validation, symbol encoding, the post-write header check and the viewer page. Owns argument semantics, output naming, stdout and stderr text, exit codes.
 - Symbol encoder: module layout, mask selection, PNG raster. Owns module content and pixel output.
 - `tools/gate.py`: black-box harness that runs the shipped artefact, decodes its output and asserts the contract. Stays in Python, is not shipped.
-- `tools/argv_matrix.py`: runs the command-line cases in `spec/argv-matrix.json` against the shipped artefact or a target binary. The fixture is frozen from the binary; the harness normalises the program name and scratch paths, collapses whitespace in stderr, and compares help stdout with whitespace collapsed because the usage line wraps on the program name.
+- `tools/argv_matrix.py`: runs the command-line cases in `spec/argv-matrix.json` against the shipped artefact or a target binary. The fixture is frozen from the binary; the harness normalises the program name and scratch paths, collapses whitespace in stderr, and compares help stdout with whitespace collapsed because the usage line wraps on the program name. `--check-manifest` ties the fixture stamp to `rust-src/Cargo.toml`.
+- `.github/pe_subsystem.py`: reads the PE header of a Windows binary and fails unless the subsystem is 3 and the import table names no redistributable runtime.
 - `tools/diff_python.py`: differential sweep over the corpus and a page set, comparing a binary with the Python line. Run on Windows and Linux before deletion, kept for a re-run against a script taken from git history.
 - `SKILL.md`: the text an agent reads; owns discovery, usage guidance, the platform-to-binary rule and the secrets rule.
 - Viewer page: static HTML next to the PNG, no script, one image reference.
@@ -102,19 +103,19 @@ Command line:
 | Flag | Type | Range or default | Notes |
 |---|---|---|---|
 | text | string | one argument | positional, optional |
-| `-f`, `--file` | path | any readable file | UTF-8, stripped |
+| `-f`, `--file` | path | any readable file up to 1 MiB | UTF-8, stripped |
 | `-o`, `--out` | path | default `qr.png` | relative to the current directory |
 | `--scale` | int | 1-100, default 10 | pixels per module |
 | `--border` | int | 0-16, default 4 | module units |
 | `--html` | flag | off | writes the page |
-| `--title` | string | default `qr code` | page only, never encoded; implies save |
+| `--title` | string | default `qr code` | page only, never encoded; requires `--html` |
 | `--save` | flag | off | writes the PNG instead of printing to the terminal |
 | `--version` | flag | off | prints the version, added by the port |
 | `-h`, `--help` | flag | off | prints usage on stdout and exits 0 |
 
 Streams: by default stdout carries the painted symbol and no path. In save mode stdout carries the absolute paths, one per line, and nothing else on success. stderr carries one line for a runtime failure, prefixed `FAIL`. Usage errors use the argparse-compatible text on stderr.
 
-Files: in save mode the PNG is the only required output and the page is optional; a default run writes no file. The output is always written as PNG, whatever the extension. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`.
+Files: in save mode the PNG is the only required output and the page is optional; a default run writes no file. The output is always written as PNG, whatever the extension. The page path is the PNG path with the extension replaced by `.html`, so `qr.png` gives `qr.html` and a name without an extension gains `.html`. When the two names land on the same file, as for `-o out.html --html`, the run is a usage error: exit 2, no file written. The comparison is case-folded on Windows and macOS and exact on Linux.
 
 ### 5.1 Distribution
 
@@ -137,8 +138,9 @@ Breaking-change rule: flag names, defaults, ranges, message text, path derivatio
 | Success, page | valid payload, `--html` | PNG path then page path, exit 0 |
 | Success, terminal | valid payload, no output option | painted symbol on stdout, exit 0, no file written |
 | Version | `--version` | one version line on stdout, exit 0 |
-| Usage error | conflicting or missing source, out-of-range number, unknown option | argparse-compatible text on stderr, exit 2, nothing written |
+| Usage error | conflicting or missing source, out-of-range number, unknown option, page path equal to the PNG path, `--title` without `--html` | argparse-compatible text on stderr, exit 2, nothing written |
 | Capacity failure | payload over level M capacity | one `FAIL store:` line on stderr, exit 1, nothing written |
+| Input too large | an `-f` file above 1 MiB | one `FAIL read:` line on stderr, exit 1, nothing written |
 | Size mismatch | header dimensions differ from the symbol size, or the file has no IEND chunk | one `FAIL png size` or `FAIL png tail` line on stderr, file removed, exit 1 |
 | Filesystem failure | unwritable output path, unreadable or non-UTF-8 input | one `FAIL read` or `FAIL write` line on stderr, exit 1, no traceback |
 | Page failure | the PNG is written and the page path is blocked | one `FAIL write` line on stderr, exit 1, PNG kept, stdout empty |
@@ -153,7 +155,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 - Network reach: none, by NFR-01.
 - Credentials: none used or stored.
 - Secret lifecycle: a QR of a token is a photographable secret. The tool stores nothing, prints nothing of the payload, and the operator deletes the artefact after scanning, per the SKILL.md rule. The default terminal mode leaves no artefact to delete and is the preferred mode for a one-off code.
-- Enforcement points: escaping for QR-16, base-name-only reference for QR-15, and the gate checks `viewer hides text` and `viewer references png` on the shipped binary.
+- Enforcement points: escaping for QR-16, the percent-encoded base name for QR-15, the page-versus-PNG comparison before any write, and the gate checks `viewer hides text`, `viewer references png` and `page equal to the png is refused` on the shipped binary.
 - Supply chain: the binary is built from this repo and committed here, so the installed artefact is the reviewed artefact. Crates are pinned in `Cargo.lock`.
 
 ## 8. Implementation constraints
@@ -173,7 +175,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | Requirement | Method | Evidence today |
 |---|---|---|
 | QR-01, QR-12 | gate decode | `decode matches`, `short payload regular 21 modules` |
-| QR-02 | gate decode | `file exit 0`, `strips file whitespace`, `crlf payload preserved`, `strip set boundary` |
+| QR-02 | gate decode | `file exit 0`, `strips file whitespace`, `crlf payload preserved`, `strip set boundary`, `rejects an input file above 1 MiB` |
 | QR-03 | gate exit code | `rejects text plus file`, `rejects empty text with file` |
 | QR-04 | gate exit code | `rejects no source` |
 | QR-05 | gate exit code | `rejects empty text` |
@@ -184,17 +186,17 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-11 | gate exit code and file absence | `rejects oversize` |
 | QR-13 | unit tests on the probe and the verdict, gate unit on a truncated file | `verify_rejects_a_size_mismatch`, `verify_names_the_size_and_the_tail`; the gate covers truncation with `png tail detects truncation` |
 | QR-14 | gate stdout | `two paths png then html` |
-| QR-15 | gate page inspection | `viewer references png`, `viewer hides text`, `viewport tag present` |
-| QR-16 | gate page inspection | `title escaped in page`, `title never encoded` |
-| QR-17 | exit code asserted in every check | all 45 |
+| QR-15 | gate page inspection and exit code | `viewer references png`, `viewer hides text`, `viewport tag present`, `page encodes a # in the image name`, `page equal to the png is refused` |
+| QR-16 | gate page inspection and exit code | `title escaped in page`, `title never encoded`, `title without html is refused` |
+| QR-17 | exit code asserted in every check | all 49 |
 | QR-18 | gate decode after a rewrite | `overwrite replaces the file` |
 | QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write` |
 | QR-20 | gate exit code and matrix help cases | `help exits 0`; the matrix compares the help text after whitespace collapse |
 | QR-21 | gate decode with stdin attached | `stdin is ignored` |
-| QR-22 | gate exit code and stdout | `version prints one line` |
+| QR-22 | gate exit code and stdout; matrix version case; version tie job | `version prints one line`; the matrix case `version`; `version tie manifest=1.2.0 fixture=1.2.0` |
 | QR-23, QR-24, NFR-12 | gate terminal rebuild, directory listing and save default | `term exits 0 with no stderr`, `term writes nothing to disk`, `term decodes to the payload`, `term keeps a square white quiet zone`, `term border 0 gives a bare 21-module grid`, `term oversize writes nothing`, `save writes qr.png and prints the path`, `save writes a decodable PNG` |
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
-| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 249856, 235008, 656984, 715912 and 535888 bytes |
+| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 361472, 346112, 665352, 716608 and 555008 bytes |
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green for both Linux builds, and the five binaries pass the gate on their own runners, macOS included (run 43805428587) |
 | D-04, D-05 | release notes carry sizes and digests; the five binaries report the same `--version` | 1.1.0: all five print 1.1.0; v1.1.0 is tagged on 3cdd391 and published with five archives, 130178, 126596, 299016, 297308 and 229378 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 45 of 45 and the matrix 30 of 30 |
 | D-04, D-05 | same check on the 1.1.1 artifacts | 1.1.1: all five print 1.1.1; v1.1.1 is tagged on 80d861f and published with five archives, 130310, 126673, 299152, 297409 and 229541 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 45 of 45 and the matrix 30 of 30 |
@@ -216,6 +218,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 1.0.0 | ARM64 on both systems: aarch64 Linux musl and Windows ARM64, built on the arm64 runners; four binaries at 1.0.0 |
 | Build, 1.1.0 | macOS ARM64: aarch64-apple-darwin built on macos-latest, no Intel macOS binary |
 | Build, 1.1.1 | failure paths: over-capacity writes nothing before output directories, failed page write removes the partial page; 45 checks and 30 matrix cases |
+| Build, 1.2.0 | audit closure: static CRT on both Windows targets with an import check, page path equal to the PNG refused, checked stdout, 1 MiB input bound, version tie, percent-encoded page name, 49 checks and 33 matrix cases |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
 | Release, 0.10.1 | shipped 2026-11-16: v0.10.1 tagged on 7517fd1, two archives published, assets re-verified at the release page |
@@ -232,7 +235,7 @@ Port increments, each closing at Gate 2:
 5. P5: terminal display. Gate met by the 47 checks, which rebuild the printed blocks into a bitmap, decode the payload and require an empty working directory after the run. 0.9.0 shipped this behind `--term`.
 6. P6: terminal display by default. Gate met by 45 checks and 30 matrix cases: a run with no output option leaves the working directory empty, and `--save` writes a decodable PNG.
 
-Gate 1 is closed; OQ-1 to OQ-5 are closed.
+Gate 1 is closed; OQ-1 to OQ-5 are closed. Gate 4 closed 2026-11-16: the spec matches the 1.2.0 binaries, the audit findings are closed, and the status moves to implemented.
 
 ## 11. Open questions
 
@@ -281,3 +284,12 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-16 | 1.0.0 adds ARM64 (`aarch64-unknown-linux-musl` and Windows ARM64) and marks the stable install model | the arm64 runners are GA in public repositories, the gate dependencies publish arm64 wheels, and the code has no architecture-specific part |
 | 2026-11-16 | 1.1.0 adds macOS ARM64 and leaves Intel macOS to a source build | macos-latest is an arm64 runner, the gate dependencies publish macOS arm64 wheels, and the code has no target-specific part |
 | 2026-11-16 | The skill payload moves to `agent-skill/`, holding `SKILL.md` and `bin/`; the crate, tools, spec and docs stay at the root | the root stays readable, and the install unit is one visible folder |
+| 2026-11-16 | 1.2.0 links the MSVC runtime statically and CI reads the import table | a folder copy cannot install a redistributable, and the missing-DLL failure happens before any argument is parsed |
+| 2026-11-16 | A page path equal to the PNG path is a usage error, not a renamed page | a silent overwrite of the image with exit 0 is worse than a refusal, and the rule needs no naming exception |
+| 2026-11-16 | `--title` requires `--html` and no longer selects save mode by itself | without a page the flag forced a write and had no visible effect |
+| 2026-11-16 | `-f` is bounded at 1 MiB | the payload maximum is 5596 bytes, and the bound stops special files without rejecting a whitespace-padded file |
+| 2026-11-16 | Output paths come from `std::path::absolute`; Unix keeps `..` in the printed path | a Windows drive-relative name needs the per-drive rule, and a second lexical resolver would duplicate it |
+| 2026-11-16 | The page percent-encodes the image name for its `src` attribute | HTML escaping is not URL escaping, and legal names with `#`, `?` or `%` failed to load |
+| 2026-11-16 | The fixture stamp, the manifest and `--version` are compared in CI | a stale binary and a forgotten bump both passed every check before |
+| 2026-11-16 | Deferred: QR-08 lossy Unix paths, QR-10 in-place writes, QR-11 the scale-100 size | each needs a design change beyond an audit fix: OsString plumbing, new cleanup rules, or a size policy |
+| 2026-11-16 | Status moves to implemented at the 1.2.0 tag | the audit findings are closed and Gate 4 records the shipped state |

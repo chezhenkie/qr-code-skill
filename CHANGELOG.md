@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.0
+
+### Fixes
+
+#### All platforms
+
+* A page path that lands on the PNG itself is a usage error, so `-o out.html --html` leaves the image instead of replacing it.
+* A closed stdout in save mode prints one `FAIL write: stdout` line and exits 1, not a panic.
+* The viewer page percent-encodes the image name, so names with `#`, `?` or `%` load.
+* An input file above 1 MiB fails with one `FAIL read:` line.
+* Output paths are resolved by the operating system; a Windows drive-relative name prints an absolute path.
+* The page name and the PNG name are compared by the platform's case rule.
+
+#### Windows
+
+* Both binaries carry the C runtime statically and import no redistributable DLL.
+
+### Changes
+
+* `--title` requires `--html`; it no longer selects save mode by itself.
+* The gate has 49 checks and the CLI matrix 33 cases.
+
 ## 1.1.1
 
 ### Fixes

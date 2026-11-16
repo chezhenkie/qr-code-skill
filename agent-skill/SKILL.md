@@ -33,15 +33,15 @@ On Linux the binary is `~/.config/opencode/skills/qr/bin/qr`, or `bin/qr-arm64` 
 
 - With no output option the symbol goes to stdout and nothing is written.
 - `--save` writes the PNG, at `-o` when given, default `qr.png`; the absolute path is printed on stdout.
-- `-o/--out`, `--scale`, `--html` and `--title` imply `--save`.
-- `-f/--file` reads the file as UTF-8 and keeps line endings as stored, then strips surrounding whitespace; give either text or a file, not both.
+- `-o/--out`, `--scale` and `--html` imply `--save`.
+- `-f/--file` reads the file as UTF-8 and keeps line endings as stored, then strips surrounding whitespace; give either text or a file, not both. Files above 1 MiB are refused.
 - `--scale` is pixels per module, 1 to 100, default 10; it applies to the PNG only.
 - `--border` is the quiet zone in modules, 0 to 16, default 4; it applies to both modes.
-- `--html` writes a viewer page next to the PNG, named after it with the extension replaced by `.html`, and prints its absolute path on stdout after the PNG path.
-- `--title` sets the viewer caption only; it is never encoded.
+- `--html` writes a viewer page next to the PNG, named after it with the extension replaced by `.html`, and prints its absolute path on stdout after the PNG path. If that name is the PNG itself, the run is refused before anything is written.
+- `--title` sets the viewer caption and requires `--html`; it is never encoded.
 - `--version` prints the version and exits 0.
 
-Error correction is fixed at level M, and every symbol is a regular QR code, never Micro QR. The viewer page loads the image by file name, scales it to 70vmin (the shorter side of the viewport), and never contains the encoded text.
+Error correction is fixed at level M, and every symbol is a regular QR code, never Micro QR. The viewer page percent-encodes the image file name for its src attribute, so names with `#`, `?` or `%` load, and scales the image to 70vmin (the shorter side of the viewport). It never contains the encoded text.
 
 ## Show on screen
 
@@ -58,7 +58,7 @@ It needs a monospaced terminal, a window wide enough that no line wraps, and eno
 
 ## Save a PNG
 
-`--save` writes the image, and so does any option that only makes sense for a file: `-o`, `--scale`, `--html`, `--title`.
+`--save` writes the image, and so does any option that only makes sense for a file: `-o`, `--scale`, `--html`.
 
 ```powershell
 & "$env:USERPROFILE\.config\opencode\skills\qr\bin\qr.exe" --save "https://example.com" -o .\qr\out.png
@@ -68,9 +68,9 @@ Write the PNG into the project being worked on, for example `qr\` in the project
 
 ## Contract
 
-In save mode the binary checks the written PNG header against the symbol size and requires the closing IEND chunk before it prints anything, so a printed path always points at a complete image of the intended module count. Arguments are validated before any file is written, and a filesystem failure ends with one `FAIL read:` or `FAIL write:` line on stderr and exit 1, never a traceback.
+In save mode the binary checks the written PNG header against the symbol size and requires the closing IEND chunk before it prints anything, so a printed path always points at a complete image of the intended module count. Arguments are validated before any file is written, the page path is compared with the PNG path so the two can never be one file, and a filesystem failure ends with one `FAIL read:` or `FAIL write:` line on stderr and exit 1, never a traceback.
 
-Text over the capacity at level M fails with one `FAIL store:` line and leaves no file; byte mode tops out at 2331 bytes, digits and uppercase text fit more. The terminal display reports a failed stdout write as one `FAIL write: stdout` line.
+Text over the capacity at level M fails with one `FAIL store:` line and leaves no file; byte mode tops out at 2331 bytes, digits and uppercase text fit more. An input file above 1 MiB fails with one `FAIL read:` line. The terminal display reports a failed stdout write as one `FAIL write: stdout` line.
 
 ## Exit and cleanup
 
