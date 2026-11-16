@@ -33,6 +33,7 @@ On Linux the binary is `~/.config/opencode/skills/qr/bin/qr`, or `bin/qr-arm64` 
 
 - With no output option the symbol goes to stdout and nothing is written.
 - `--save` writes the PNG, at `-o` when given, default `qr.png`; the absolute path is printed on stdout.
+- Paths are used exactly as given, including names that are not valid Unicode; a printed path shows such a name with the replacement character.
 - `-o/--out`, `--scale` and `--html` imply `--save`.
 - `-f/--file` reads the file as UTF-8 and keeps line endings as stored, then strips surrounding whitespace; give either text or a file, not both. Files above 1 MiB are refused.
 - `--scale` is pixels per module, 1 to 100, default 10; it applies to the PNG only.
@@ -68,17 +69,17 @@ Write the PNG into the project being worked on, for example `qr\` in the project
 
 ## Contract
 
-In save mode the binary checks the written PNG header against the symbol size and requires the closing IEND chunk before it prints anything, so a printed path always points at a complete image of the intended module count. Arguments are validated before any file is written, the page path is compared with the PNG path so the two can never be one file, and a filesystem failure ends with one `FAIL read:` or `FAIL write:` line on stderr and exit 1, never a traceback.
+In save mode the binary writes the PNG under a temporary name beside the output, checks the header against the symbol size, requires the closing IEND chunk, then renames it into place before it prints anything, so a printed path always points at a complete image of the intended module count and an existing image is replaced only by a checked one. Arguments are validated before any file is written, the page path is compared with the PNG path so the two can never be one file, an existing read-only destination is refused with one `FAIL write` line, and a filesystem failure ends with one `FAIL read:` or `FAIL write:` line on stderr and exit 1, never a traceback.
 
 Text over the capacity at level M fails with one `FAIL store:` line and leaves no file; byte mode tops out at 2331 bytes, digits and uppercase text fit more. An input file above 1 MiB fails with one `FAIL read:` line. The terminal display reports a failed stdout write as one `FAIL write: stdout` line.
 
 ## Exit and cleanup
 
 - Exit 0: terminal mode has painted the symbol; save mode has printed the absolute paths and the PNG passed the size and IEND check.
-- Exit 1: one `FAIL` line on stderr. A payload over capacity writes nothing, a failed write or PNG check removes the PNG, and a failed page write leaves the PNG for a retry.
+- Exit 1: one `FAIL` line on stderr. A payload over capacity writes nothing, a failed write or PNG check removes the temporary file and leaves any earlier image at the path untouched, and a failed page write leaves the PNG for a retry.
 - Exit 2: usage error, nothing written.
 
-Nothing removes saved files automatically. After the scan, delete the PNG and the page: `Remove-Item .\qr\out.png, .\qr\out.html` on Windows, `rm qr/out.png qr/out.html` on Linux. Delete a secret as soon as the scan is confirmed, without copying the files elsewhere first. A process stopped mid-write can leave a partial PNG at the output path; delete that path as well. The default terminal mode leaves nothing to delete.
+Nothing removes saved files automatically. After the scan, delete the PNG and the page: `Remove-Item .\qr\out.png, .\qr\out.html` on Windows, `rm qr/out.png qr/out.html` on Linux. Delete a secret as soon as the scan is confirmed, without copying the files elsewhere first. A process stopped by force can leave a `.<name>.<pid>.tmp` file beside the output; delete that name as well. The default terminal mode leaves nothing to delete.
 
 ## Secrets
 
@@ -86,7 +87,7 @@ A QR that encodes a token, password, or provisioning string is a photographable 
 
 ## Limits
 
-Keep the quiet zone at 4 or more modules; a tight crop fails on many scanners. Long text produces a dense symbol (version 40 is 177 modules), so raise `--scale` to 16 for screen scanning. The range itself allows far more than a scanner needs: 2331 bytes at `--scale 100` is 18500 px per side, about 342 megapixels. A dark-on-light code on a matte screen scans best; invert nothing.
+Keep the quiet zone at 4 or more modules; a tight crop fails on many scanners. Long text produces a dense symbol (version 40 is 177 modules), so raise `--scale` to 16 for screen scanning. The range itself allows far more than a scanner needs: 2331 bytes at `--scale 100` is 18500 px per side with the default quiet zone and 20900 px with `--border 16`, about 55 MB; a viewer that refuses very large images needs a lower scale. A dark-on-light code on a matte screen scans best; invert nothing.
 
 Terminal rendering is one column per module plus the quiet zone, so the window must be wider than the code; a wrapped line cannot be scanned.
 

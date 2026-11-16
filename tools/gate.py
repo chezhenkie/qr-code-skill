@@ -8,6 +8,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import struct
 import subprocess
 import sys
@@ -228,6 +229,29 @@ code, out, err = run(["first", "-o", "over.png"])
 code, out, err = run(["second", "-o", "over.png", "--scale", "12"])
 check("overwrite replaces the file", code == 0 and decode(art("over.png")) == "second", f"{code} {err}")
 
+with open(art("over.png"), "rb") as fh:
+    over_before = fh.read()
+os.chmod(art("over.png"), stat.S_IREAD)
+code, out, err = run(["third", "-o", "over.png"])
+check(
+    "read-only output is refused",
+    code == 1 and out == "" and err.startswith("FAIL write") and "read-only" in err,
+    f"{code} {out!r} {err[:90]}",
+)
+with open(art("over.png"), "rb") as fh:
+    over_after = fh.read()
+check(
+    "read-only output keeps the old image",
+    over_after == over_before and decode(art("over.png")) == "second",
+    f"{len(over_before)} {len(over_after)}",
+)
+check(
+    "read-only failure leaves no temp file",
+    [name for name in os.listdir(WORK) if name.endswith(".tmp")] == [],
+    str(os.listdir(WORK)),
+)
+os.chmod(art("over.png"), stat.S_IREAD | stat.S_IWRITE)
+
 code, out, err = run(["x", "-o", os.path.join("n1", "n2", "n3", "qr.png")])
 check("creates nested parents", code == 0 and os.path.exists(art("n1", "n2", "n3", "qr.png")), f"{code} {err}")
 
@@ -287,6 +311,36 @@ os.makedirs(art("blocked.html"), exist_ok=True)
 code, out, err = run(["x", "-o", "blocked.png", "--html"])
 check("blocks page with FAIL write", code == 1 and out == "" and err.startswith("FAIL write") and "Traceback" not in err, f"{code} {err[:90]}")
 check("page failure keeps the PNG", os.path.exists(art("blocked.png")), "png removed")
+check(
+    "page failure leaves no temp file",
+    [name for name in os.listdir(WORK) if name.endswith(".tmp")] == [],
+    str(os.listdir(WORK)),
+)
+
+exotic = "bad\ud800.txt" if os.name == "nt" else "bad\udcff.txt"
+exotic_out = "out\ud800.png" if os.name == "nt" else "out\udcff.png"
+with open(art(exotic), "wb") as fh:
+    fh.write(b"exotic")
+code, out, err = run(["-f", exotic, "-o", exotic_out])
+check(
+    "a name that is not valid unicode is used exactly",
+    code == 0 and decode(art(exotic_out)) == "exotic" and err == "",
+    f"{code} {err[:90]}",
+)
+
+code, out, err = run(["x" * 2300, "-o", "extreme.png", "--scale", "100", "--border", "16"])
+size, complete = png_probe(art("extreme.png"))
+check(
+    "scale 100 border 16 gives a 20900 pixel image",
+    code == 0 and size == (20900, 20900) and err == "",
+    f"{code} {size} {err[:60]}",
+)
+check(
+    "the largest image ends with IEND",
+    complete,
+    str(complete),
+)
+os.remove(art("extreme.png"))
 
 trunc = art("trunc.png")
 with open(art("plain.png"), "rb") as src, open(trunc, "wb") as dst:

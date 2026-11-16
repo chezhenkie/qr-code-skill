@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.1
+
+### Fixes
+
+#### All platforms
+
+* Paths reach the file system unchanged, so a name that is not valid Unicode is read and written instead of being replaced with U+FFFD; a message shows such a name with the replacement character.
+* A PNG is written under a temporary name beside the output, checked, then renamed into place, so a failed run leaves an existing image intact and no reader sees a partial file.
+* A destination that exists and is read-only is refused with one `FAIL write` line instead of being replaced, which Unix would have allowed.
+* The viewer page builds its image reference from the name's bytes, so a name that is not valid Unicode loads on Unix.
+* The largest image is documented: `--scale 100 --border 16` is 20900 pixels square and about 55 MB.
+
+### Changes
+
+* The gate has 56 checks.
+
 ## 1.2.0
 
 ### Fixes

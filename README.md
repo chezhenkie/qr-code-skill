@@ -31,7 +31,7 @@ Both samples come from `agent-skill/bin/qr.exe --save "https://example.com" -o d
 | `agent-skill/bin/qr-arm64` | Linux ARM64 binary, statically linked |
 | `agent-skill/bin/qr-macos-arm64` | macOS ARM64 binary |
 | `rust-src/` | The crate: command line, encoder, PNG writer, terminal renderer, viewer template |
-| `tools/gate.py` | 49-check acceptance gate over the shipped binary |
+| `tools/gate.py` | 56-check acceptance gate over the shipped binary |
 | `tools/argv_matrix.py` | 33-case command-line harness against the frozen fixture |
 | `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
 | `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
@@ -68,7 +68,7 @@ mkdir -p ~/.config/opencode/skills/qr
 cp -r agent-skill/SKILL.md agent-skill/bin ~/.config/opencode/skills/qr
 ```
 
-`~` is your home directory; if the shell does not expand it, use the full path. The [v1.2.0 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.2.0) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
+`~` is your home directory; if the shell does not expand it, use the full path. The [v1.2.1 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.2.1) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
 
 ## Use
 
@@ -137,12 +137,12 @@ The output is UTF-8 text with a colour prefix and needs a monospaced terminal. K
 | `-h, --help` | Print the usage text | |
 | `--version` | Print the version | |
 
-File input is stripped of surrounding whitespace before encoding; text is encoded as given, and a file above 1 MiB is refused.
-In save mode the PNG is written by the tool itself as a 1-bit greyscale image, then the header is checked against the symbol size and the closing chunk is required; a mismatch removes the file and exits 1, so a printed path points at a complete image of the intended module count. The page path is compared with the PNG path before anything is written, so the two can never be one file. The page percent-encodes the image name, scales the image to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.
+File input is stripped of surrounding whitespace before encoding; text is encoded as given, and a file above 1 MiB is refused. Paths are passed to the file system unchanged, so a name that is not valid Unicode works; a printed path shows such a name with the replacement character.
+In save mode the PNG is written by the tool itself as a 1-bit greyscale image under a temporary name beside the output, checked against the symbol size with the closing chunk required, then renamed into place; a mismatch removes the temporary file and exits 1, so a printed path points at a complete image of the intended module count and an existing image is replaced only by a checked one. A destination that exists and is read-only is refused with one `FAIL write` line and left untouched. The page path is compared with the PNG path before anything is written, so the two can never be one file. The page builds its image reference from the name's bytes, percent-encoded, scales the image to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.
 
 ## Cleanup
 
-The terminal mode writes nothing: its only output is stdout, so there is nothing to delete. Save mode writes only the files you name, the PNG at `-o` and, with `--html`, the page beside it, and uses no temporary folder, cache or log.
+The terminal mode writes nothing: its only output is stdout, so there is nothing to delete. Save mode writes only the files you name, the PNG at `-o` and, with `--html`, the page beside it, and keeps no temporary folder, cache or log. Each file is written under a temporary name beside it and renamed when complete, so a failed run removes the temporary file and leaves any earlier image in place; a run stopped by force can leave one `.<name>.<pid>.tmp` file to delete.
 
 ```powershell
 Remove-Item .\qr\out.png, .\qr\out.html
@@ -163,7 +163,7 @@ python tools/gate.py
 python tools/argv_matrix.py
 ```
 
-The gate runs 49 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, a truncated PNG, and the terminal rendering, which is rebuilt from the printed blocks into a bitmap, decoded, and checked for an empty working directory. The matrix compares 33 command-line cases with the frozen fixture.
+The gate runs 56 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, a truncated PNG, the largest image the options allow, a read-only destination and a name that is not valid Unicode, and the terminal rendering, which is rebuilt from the printed blocks into a bitmap, decoded, and checked for an empty working directory. The matrix compares 33 command-line cases with the frozen fixture.
 Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing. Both tools write their fixtures under `tools/.artifacts` and delete them on exit.
 
 CI runs the gate and the matrix on Windows and Linux for x86_64 and ARM64, and on macOS ARM64, checks the version tie, formatting and lints, builds the crate for all five targets, checks that both Linux binaries have no dynamic dependency, and runs them on `alpine:3.21`. No local Rust toolchain is needed.
@@ -174,7 +174,7 @@ CI runs the gate and the matrix on Windows and Linux for x86_64 and ARM64, and o
 - A UTF-8 input file holds at most 1 MiB; a larger file fails with one `FAIL read:` line.
 - `--border` accepts 0 to 16 in both modes; `--scale` accepts 1 to 100 in save mode. A quiet zone of 4 or more modules scans best.
 - The terminal rendering draws one column per module plus the quiet zone; a window narrower than that wraps the symbol and breaks the scan.
-- Long text makes a dense symbol, so raise `--scale` for screen scanning. 2331 bytes at scale 100 is 18500 pixels per side.
+- Long text makes a dense symbol, so raise `--scale` for screen scanning. 2331 bytes at scale 100 is 18500 pixels per side with the default quiet zone, and 20900 with `--border 16`, about 55 MB; a viewer that refuses very large images needs a lower scale.
 - Text is stored as UTF-8. Text that a Shift-JIS encoder would place in kanji mode is written as bytes, so the symbol can need more versions.
 - The viewer page loads the PNG from the same folder; copy both files together.
 - Prebuilt binaries cover Windows and Linux on x86_64 and ARM64, and macOS on ARM64. Intel Macs build from `rust-src/`.

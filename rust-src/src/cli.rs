@@ -1,4 +1,13 @@
 //! Command line parsing, modelled on argparse: prefixes, clusters, exit codes.
+//!
+//! Options are matched on their lossy text view, while a value that names a
+//! path keeps the raw operating-system string, so a name that is not valid
+//! Unicode is passed through unchanged.
+
+use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
+
+use crate::util;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -9,8 +18,8 @@ const WIDTH: usize = 80;
 #[derive(Debug, PartialEq)]
 pub struct Args {
     pub text: Option<String>,
-    pub file: Option<String>,
-    pub out: String,
+    pub file: Option<PathBuf>,
+    pub out: PathBuf,
     pub scale: u32,
     pub border: u32,
     pub html: bool,
@@ -74,8 +83,9 @@ const LONG_OPTIONS: [(&str, Opt); 9] = [
 
 struct State {
     text: Option<String>,
-    file: Option<String>,
-    out: String,
+    text_unreadable: bool,
+    file: Option<PathBuf>,
+    out: PathBuf,
     scale: i64,
     border: i64,
     html: bool,
@@ -91,8 +101,9 @@ impl Default for State {
     fn default() -> Self {
         State {
             text: None,
+            text_unreadable: false,
             file: None,
-            out: "qr.png".to_string(),
+            out: PathBuf::from("qr.png"),
             scale: 10,
             border: 4,
             html: false,
@@ -107,46 +118,50 @@ impl Default for State {
 }
 
 impl State {
-    fn positional(&mut self, token: &str) {
-        if self.text.is_none() {
-            self.text = Some(token.to_string());
+    fn positional(&mut self, token: &OsStr) {
+        if self.text.is_none() && !self.text_unreadable {
+            match token.to_str() {
+                Some(text) => self.text = Some(text.to_string()),
+                None => self.text_unreadable = true,
+            }
         } else {
-            self.extras.push(token.to_string());
+            self.extras.push(token.to_string_lossy().into_owned());
         }
     }
 }
 
 enum Matched {
-    Option(Opt, Option<String>),
+    Option(Opt, Option<OsString>),
     Unknown(String),
 }
 
-pub fn parse(argv: &[String]) -> Outcome {
+pub fn parse(argv: &[OsString]) -> Outcome {
     let mut state = State::default();
     let mut index = 0;
     let mut positional_only = false;
     while index < argv.len() {
         let token = &argv[index];
         index += 1;
+        let shown = token.to_string_lossy();
         if positional_only {
             state.positional(token);
             continue;
         }
-        if token == "--" {
+        if shown == "--" {
             positional_only = true;
             continue;
         }
-        if token == "-" || !token.starts_with('-') {
+        if shown == "-" || !shown.starts_with('-') {
             state.positional(token);
             continue;
         }
-        let matched = if token.starts_with("--") {
-            parse_long(token, argv, &mut index)
-        } else if is_negative_number(token) {
+        let matched = if shown.starts_with("--") {
+            parse_long(token, &shown, argv, &mut index)
+        } else if is_negative_number(&shown) {
             state.positional(token);
             continue;
         } else {
-            parse_short(token, argv, &mut index)
+            parse_short(token, &shown, argv, &mut index)
         };
         match matched {
             Ok(Matched::Option(opt, value)) => {
@@ -161,10 +176,15 @@ pub fn parse(argv: &[String]) -> Outcome {
     finish(state)
 }
 
-fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched, String> {
-    let (name, inline) = match token.find('=') {
-        Some(pos) => (&token[..pos], Some(token[pos + 1..].to_string())),
-        None => (token, None),
+fn parse_long(
+    token: &OsStr,
+    shown: &str,
+    argv: &[OsString],
+    index: &mut usize,
+) -> Result<Matched, String> {
+    let (name, equals) = match shown.find('=') {
+        Some(pos) => (&shown[..pos], Some(pos)),
+        None => (shown, None),
     };
     let opt = if let Some((_, opt)) = LONG_OPTIONS.iter().find(|(long, _)| *long == name) {
         *opt
@@ -175,10 +195,10 @@ fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched
             .map(|(long, _)| *long)
             .collect();
         match hits.len() {
-            0 => return Ok(Matched::Unknown(token.to_string())),
+            0 => return Ok(Matched::Unknown(shown.to_string())),
             1 => match LONG_OPTIONS.iter().find(|(long, _)| *long == hits[0]) {
                 Some((_, opt)) => *opt,
-                None => return Ok(Matched::Unknown(token.to_string())),
+                None => return Ok(Matched::Unknown(shown.to_string())),
             },
             _ => {
                 return Err(format!(
@@ -190,17 +210,17 @@ fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched
         }
     };
     if !opt.takes_value() {
-        if let Some(value) = inline {
+        if let Some(pos) = equals {
             return Err(format!(
                 "argument {}: ignored explicit argument '{}'",
                 opt.display(),
-                value
+                &shown[pos + 1..]
             ));
         }
         return Ok(Matched::Option(opt, None));
     }
-    match inline {
-        Some(value) => Ok(Matched::Option(opt, Some(value))),
+    match equals {
+        Some(pos) => Ok(Matched::Option(opt, Some(inline_value(token, shown, pos)))),
         None => match next_value(argv, index) {
             Some(value) => Ok(Matched::Option(opt, Some(value))),
             None => Err(format!("argument {}: expected one argument", opt.display())),
@@ -208,36 +228,51 @@ fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched
     }
 }
 
-fn parse_short(token: &str, argv: &[String], index: &mut usize) -> Result<Matched, String> {
-    let body = &token[1..];
-    let mut chars = body.chars();
-    let Some(letter) = chars.next() else {
-        return Ok(Matched::Unknown(token.to_string()));
+/// The value after `=` in the raw token: the text slice where the token is
+/// valid Unicode, the stripped raw tail where it is not.
+fn inline_value(token: &OsStr, shown: &str, equals: usize) -> OsString {
+    if token.to_str().is_some() {
+        OsString::from(&shown[equals + 1..])
+    } else {
+        util::strip_ascii_prefix(token, &shown[..=equals]).unwrap_or_default()
+    }
+}
+
+fn parse_short(
+    token: &OsStr,
+    shown: &str,
+    argv: &[OsString],
+    index: &mut usize,
+) -> Result<Matched, String> {
+    let body = &shown[1..];
+    let Some(letter) = body.chars().next() else {
+        return Ok(Matched::Unknown(shown.to_string()));
     };
     let opt = match letter {
         'h' => Opt::Help,
         'f' => Opt::File,
         'o' => Opt::Out,
-        _ => return Ok(Matched::Unknown(token.to_string())),
+        _ => return Ok(Matched::Unknown(shown.to_string())),
     };
     if !opt.takes_value() {
         return Ok(Matched::Option(opt, None));
     }
-    let rest = chars.as_str();
-    let value = if rest.is_empty() {
+    let tail = util::strip_ascii_prefix(token, &format!("-{}", letter)).unwrap_or_default();
+    let value = if tail.is_empty() {
         match next_value(argv, index) {
             Some(value) => value,
             None => return Err(format!("argument {}: expected one argument", opt.display())),
         }
     } else {
-        rest.strip_prefix('=').unwrap_or(rest).to_string()
+        util::strip_ascii_prefix(&tail, "=").unwrap_or(tail)
     };
     Ok(Matched::Option(opt, Some(value)))
 }
 
-fn next_value(argv: &[String], index: &mut usize) -> Option<String> {
+fn next_value(argv: &[OsString], index: &mut usize) -> Option<OsString> {
     let token = argv.get(*index)?;
-    if token == "-" || !token.starts_with('-') || is_negative_number(token) {
+    let shown = token.to_string_lossy();
+    if shown == "-" || !shown.starts_with('-') || is_negative_number(&shown) {
         *index += 1;
         Some(token.clone())
     } else {
@@ -245,7 +280,7 @@ fn next_value(argv: &[String], index: &mut usize) -> Option<String> {
     }
 }
 
-fn apply(state: &mut State, opt: Opt, value: Option<String>) -> Option<Outcome> {
+fn apply(state: &mut State, opt: Opt, value: Option<OsString>) -> Option<Outcome> {
     match opt {
         Opt::Help => Some(Outcome::Help),
         Opt::Version => Some(Outcome::Version),
@@ -258,19 +293,24 @@ fn apply(state: &mut State, opt: Opt, value: Option<String>) -> Option<Outcome> 
             None
         }
         Opt::File => {
-            state.file = Some(value.unwrap_or_default());
+            state.file = Some(PathBuf::from(value.unwrap_or_default()));
             None
         }
         Opt::Out => {
-            state.out = value.unwrap_or_default();
+            state.out = PathBuf::from(value.unwrap_or_default());
             state.out_given = true;
             None
         }
-        Opt::Title => {
-            state.title = value.unwrap_or_default();
-            state.title_given = true;
-            None
-        }
+        Opt::Title => match value.unwrap_or_default().into_string() {
+            Ok(title) => {
+                state.title = title;
+                state.title_given = true;
+                None
+            }
+            Err(_) => Some(Outcome::Usage(
+                "argument --title: value is not valid UTF-8".to_string(),
+            )),
+        },
         Opt::Scale => match int_value(value, Opt::Scale) {
             Ok(number) => {
                 state.scale = number;
@@ -289,14 +329,17 @@ fn apply(state: &mut State, opt: Opt, value: Option<String>) -> Option<Outcome> 
     }
 }
 
-fn int_value(value: Option<String>, opt: Opt) -> Result<i64, String> {
+fn int_value(value: Option<OsString>, opt: Opt) -> Result<i64, String> {
     let text = value.unwrap_or_default();
-    match text.trim().parse::<i64>() {
-        Ok(number) => Ok(number),
-        Err(_) => Err(format!(
+    match text
+        .to_str()
+        .and_then(|shown| shown.trim().parse::<i64>().ok())
+    {
+        Some(number) => Ok(number),
+        None => Err(format!(
             "argument {}: invalid int value: '{}'",
             opt.display(),
-            text
+            text.to_string_lossy()
         )),
     }
 }
@@ -307,6 +350,9 @@ fn finish(state: State) -> Outcome {
             "unrecognized arguments: {}",
             state.extras.join(" ")
         ));
+    }
+    if state.text_unreadable {
+        return Outcome::Usage("argument text: value is not valid UTF-8".to_string());
     }
     if !(1..=100).contains(&state.scale) {
         return Outcome::Usage("--scale must be 1-100".to_string());
@@ -406,8 +452,8 @@ pub fn error(prog: &str, message: &str) -> String {
 mod tests {
     use super::*;
 
-    fn argv(items: &[&str]) -> Vec<String> {
-        items.iter().map(|item| item.to_string()).collect()
+    fn argv(items: &[&str]) -> Vec<OsString> {
+        items.iter().map(OsString::from).collect()
     }
 
     fn usage_message(items: &[&str]) -> String {
@@ -422,12 +468,13 @@ mod tests {
         match parse(&argv(&["x"])) {
             Outcome::Run(args) => {
                 assert_eq!(args.text.as_deref(), Some("x"));
-                assert_eq!(args.out, "qr.png");
+                assert_eq!(args.out, PathBuf::from("qr.png"));
                 assert_eq!(args.scale, 10);
                 assert_eq!(args.border, 4);
                 assert!(!args.html);
                 assert_eq!(args.title, "qr code");
                 assert!(!args.save);
+                assert_eq!(args.file, None);
             }
             other => panic!("expected a run, got {:?}", other),
         }
@@ -439,7 +486,7 @@ mod tests {
             Outcome::Run(args) => {
                 assert_eq!(args.scale, 12);
                 assert_eq!(args.border, 2);
-                assert_eq!(args.out, "a.png");
+                assert_eq!(args.out, PathBuf::from("a.png"));
             }
             other => panic!("expected a run, got {:?}", other),
         }
@@ -544,7 +591,7 @@ mod tests {
             Outcome::Run(args) => {
                 assert!(!args.save);
                 assert_eq!(args.border, 2);
-                assert_eq!(args.out, "qr.png");
+                assert_eq!(args.out, PathBuf::from("qr.png"));
             }
             other => panic!("expected a run, got {:?}", other),
         }
@@ -596,6 +643,60 @@ mod tests {
             usage_message(&["x", "--t"]),
             "argument --title: expected one argument"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_non_utf8_path_value_survives_both_forms() {
+        use std::os::unix::ffi::{OsStrExt, OsStringExt};
+        let bad = OsString::from_vec(b"bad\xff.png".to_vec());
+        let mut inline = OsString::from("--out=");
+        inline.push(&bad);
+        for items in [
+            vec![OsString::from("x"), OsString::from("-o"), bad.clone()],
+            vec![OsString::from("x"), inline],
+        ] {
+            match parse(&items) {
+                Outcome::Run(args) => {
+                    assert_eq!(args.out.as_os_str().as_bytes(), b"bad\xff.png")
+                }
+                other => panic!("expected a run, got {:?}", other),
+            }
+        }
+        let file = vec![OsString::from("-f"), bad.clone()];
+        match parse(&file) {
+            Outcome::Run(args) => {
+                assert_eq!(
+                    args.file.as_deref().map(|p| p.as_os_str().as_bytes()),
+                    Some(&b"bad\xff.png"[..])
+                )
+            }
+            other => panic!("expected a run, got {:?}", other),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_unreadable_positional_or_title_is_a_usage_error() {
+        use std::os::unix::ffi::OsStringExt;
+        let bad = OsString::from_vec(b"x\xff".to_vec());
+        match parse(&[
+            OsString::from("--title"),
+            bad.clone(),
+            OsString::from("x"),
+            OsString::from("--html"),
+        ]) {
+            Outcome::Usage(message) => {
+                assert_eq!(message, "argument --title: value is not valid UTF-8")
+            }
+            other => panic!("expected a usage error, got {:?}", other),
+        }
+        match parse(&[bad]) {
+            Outcome::Usage(message) => {
+                assert_eq!(message, "argument text: value is not valid UTF-8")
+            }
+            other => panic!("expected a usage error, got {:?}", other),
+        }
     }
 
     #[test]

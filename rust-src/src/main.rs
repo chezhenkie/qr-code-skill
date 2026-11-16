@@ -7,7 +7,7 @@ mod util;
 mod viewer;
 
 use std::fs;
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -45,10 +45,10 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         save,
     } = args;
 
-    let data = match file.as_deref() {
+    let data = match &file {
         Some(path) => match util::read_stripped(path) {
             Ok(data) => data,
-            Err(err) => return fail("read", path, &err),
+            Err(err) => return fail("read", &util::display(path), &err),
         },
         None => text.unwrap_or_default(),
     };
@@ -74,39 +74,42 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         Err(clash) => {
             eprint!(
                 "{}",
-                cli::error(prog, &format!("page path equals the PNG path: {}", clash))
+                cli::error(
+                    prog,
+                    &format!("page path equals the PNG path: {}", util::display(&clash))
+                )
             );
             return 2;
         }
     };
+    let shown = util::display(&out);
 
     let code = match encode_or_fail(&data) {
         Ok(code) => code,
         Err(code) => return code,
     };
-    let side = (code.size() as u64 + 2 * border as u64) * scale as u64;
-    let side = side as u32;
+    let side = (code.size() as u32 + 2 * border) * scale;
 
-    if let Some(parent) = Path::new(&out).parent() {
+    if let Some(parent) = out.parent() {
         if !parent.as_os_str().is_empty() {
             if let Err(err) = fs::create_dir_all(parent) {
-                return fail("write", &out, &err);
+                return fail("write", &shown, &err);
             }
         }
     }
-
-    let write_png = || -> std::io::Result<()> {
-        let file = fs::File::create(&out)?;
-        let mut writer = std::io::BufWriter::with_capacity(128 * 1024, file);
-        png::write_png(&mut writer, &code, scale, border)?;
-        writer.flush()
-    };
-    if let Err(err) = write_png() {
-        let _ = fs::remove_file(&out);
-        return fail("write", &out, &err);
+    if let Err(err) = refuse_readonly(&out) {
+        return fail("write", &shown, &err);
     }
 
-    let probe = match png::probe(Path::new(&out)) {
+    // The image goes to a temp name beside the final one and is renamed only
+    // after the header check, so a failed run never truncates an existing
+    // image and no reader sees a partial file.
+    let temp = util::temp_path(&out);
+    if let Err(err) = write_png_file(&temp, &code, scale, border) {
+        let _ = fs::remove_file(&temp);
+        return fail("write", &shown, &err);
+    }
+    let probe = match png::probe(&temp) {
         Ok(probe) => probe,
         Err(_) => png::Probe {
             size: None,
@@ -114,35 +117,69 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         },
     };
     if let Err(line) = png::verify(&probe, side) {
-        let _ = fs::remove_file(&out);
+        let _ = fs::remove_file(&temp);
         eprintln!("{}", line);
         return 1;
     }
+    if let Err(err) = fs::rename(&temp, &out) {
+        let _ = fs::remove_file(&temp);
+        return fail("write", &shown, &err);
+    }
 
     if let Some(page) = &page {
-        let name = util::base_name(&out);
+        let name = util::page_name(&out);
         let rendered = viewer::render(&title, &name);
-        let write_page = || -> std::io::Result<()> {
-            let mut file = fs::File::create(page)?;
-            file.write_all(rendered.as_bytes())?;
-            file.flush()
-        };
-        if let Err(err) = write_page() {
-            let _ = fs::remove_file(page);
-            return fail("write", page, &err);
+        let shown_page = util::display(page);
+        if let Err(err) = refuse_readonly(page) {
+            return fail("write", &shown_page, &err);
+        }
+        let temp = util::temp_path(page);
+        if let Err(err) = write_page_file(&temp, rendered.as_bytes()) {
+            let _ = fs::remove_file(&temp);
+            return fail("write", &shown_page, &err);
+        }
+        if let Err(err) = fs::rename(&temp, page) {
+            let _ = fs::remove_file(&temp);
+            return fail("write", &shown_page, &err);
         }
     }
 
-    let mut printed = write_stdout(&format!("{}\n", out));
+    let mut printed = write_stdout(&format!("{}\n", shown));
     if printed.is_ok() {
         if let Some(page) = &page {
-            printed = write_stdout(&format!("{}\n", page));
+            printed = write_stdout(&format!("{}\n", util::display(page)));
         }
     }
     if let Err(err) = printed {
         return fail("write", "stdout", &err);
     }
     0
+}
+
+/// Refuse to replace a file that is read-only, on every platform. Unix would
+/// let the rename replace it, Windows would not; one rule both can rely on.
+/// The path itself is inspected, so replacing a symlink is judged by the link.
+fn refuse_readonly(path: &Path) -> io::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(meta) if meta.is_file() && meta.permissions().readonly() => Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "destination is read-only",
+        )),
+        _ => Ok(()),
+    }
+}
+
+fn write_png_file(path: &Path, code: &QrCode, scale: u32, border: u32) -> io::Result<()> {
+    let file = fs::File::create(path)?;
+    let mut writer = io::BufWriter::with_capacity(128 * 1024, file);
+    png::write_png(&mut writer, code, scale, border)?;
+    writer.flush()
+}
+
+fn write_page_file(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    let mut file = fs::File::create(path)?;
+    file.write_all(bytes)?;
+    file.flush()
 }
 
 /// One checked write to stdout: a closed pipe is a FAIL line, not a panic.
