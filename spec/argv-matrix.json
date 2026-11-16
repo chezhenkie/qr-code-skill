@@ -2,17 +2,17 @@
   "cases": {
     "ambiguous-h": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: ambiguous option: --h could match --help, --html",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: ambiguous option: --h could match --help, --html",
       "stdout": ""
     },
     "ambiguous-s": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: ambiguous option: --s could match --scale, --save",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: ambiguous option: --s could match --scale, --save",
       "stdout": ""
     },
     "bad-int": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument --scale: invalid int value: 'abc'",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: argument --scale: invalid int value: 'abc'",
       "stdout": ""
     },
     "dash-text": {
@@ -32,7 +32,7 @@
     },
     "empty-text": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: empty input",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: empty input",
       "stdout": ""
     },
     "file-missing": {
@@ -48,17 +48,17 @@
     "help": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "help-cluster": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "help-long": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [--version] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n  --version        show program's version number and exit\n"
     },
     "html-title": {
       "rc": 0,
@@ -67,12 +67,12 @@
     },
     "missing-value-scale": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument --scale: expected one argument",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: argument --scale: expected one argument",
       "stdout": ""
     },
     "negative-border": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --border must be 0-16",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: --border must be 0-16",
       "stdout": ""
     },
     "nested-out": {
@@ -82,7 +82,7 @@
     },
     "no-args": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: provide text or --file",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: provide text or --file",
       "stdout": ""
     },
     "out-equals": {
@@ -92,7 +92,7 @@
     },
     "out-looks-like-option": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument -o/--out: expected one argument",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: argument -o/--out: expected one argument",
       "stdout": ""
     },
     "prefix-scale": {
@@ -102,12 +102,12 @@
     },
     "range-border": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --border must be 0-16",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: --border must be 0-16",
       "stdout": ""
     },
     "range-scale": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --scale must be 1-100",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: --scale must be 1-100",
       "stdout": ""
     },
     "save-default": {
@@ -137,22 +137,22 @@
     },
     "two-positionals": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: y",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: unrecognized arguments: y",
       "stdout": ""
     },
     "unknown-cluster": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: -xh",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: unrecognized arguments: -xh",
       "stdout": ""
     },
     "unknown-long": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: --bogus",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] PROG: error: unrecognized arguments: --bogus",
       "stdout": ""
     }
   },
   "reference": {
     "platform": "win32",
-    "program": "0.10.0"
+    "program": "0.10.1"
   }
 }
