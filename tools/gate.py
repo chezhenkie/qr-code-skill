@@ -1,10 +1,11 @@
 """Black-box acceptance gate for the shipped generator.
 
-Runs bin\qr.exe on Windows and bin/qr elsewhere, or the binary given with
+Runs the binary for the host architecture from bin, or the one given with
 --target. Needs zxing-cpp and Pillow to decode the produced PNGs.
 """
 import atexit
 import os
+import platform
 import re
 import shutil
 import struct
@@ -18,7 +19,10 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
 def default_target():
-    return os.path.join(REPO, "bin", "qr.exe" if os.name == "nt" else "qr")
+    name = "qr-arm64" if platform.machine().lower() in ("arm64", "aarch64") else "qr"
+    if os.name == "nt":
+        name += ".exe"
+    return os.path.join(REPO, "bin", name)
 
 
 TARGET = (

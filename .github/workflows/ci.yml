@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, windows-11-arm, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, windows-11-arm, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -99,6 +99,41 @@ jobs:
           path: rust-src/target/release/qr.exe
           if-no-files-found: error
 
+  build-windows-arm64:
+    name: build windows arm64
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - if: hashFiles('rust-src/Cargo.toml') == ''
+        run: echo "rust-src is not committed yet, skipping"
+      - name: build
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: cargo build --release --locked --manifest-path rust-src/Cargo.toml
+      - name: unit tests
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: cargo test --locked --manifest-path rust-src/Cargo.toml
+      - name: console subsystem
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python .github/pe_subsystem.py rust-src/target/release/qr.exe
+      - name: gate dependencies
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python -m pip install pillow zxing-cpp
+      - name: gate on the exe
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python tools/gate.py --target rust-src/target/release/qr.exe
+      - name: cli matrix on the exe
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python tools/argv_matrix.py --target rust-src/target/release/qr.exe
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('rust-src/Cargo.toml') != ''
+        with:
+          name: qr-windows-arm64
+          path: rust-src/target/release/qr.exe
+          if-no-files-found: error
+
   build-linux:
     name: build linux musl
     runs-on: ubuntu-latest
@@ -150,6 +185,57 @@ jobs:
           path: rust-src/target/x86_64-unknown-linux-musl/release/qr
           if-no-files-found: error
 
+  build-linux-arm64:
+    name: build linux arm64 musl
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - if: hashFiles('rust-src/Cargo.toml') == ''
+        run: echo "rust-src is not committed yet, skipping"
+      - name: build
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          rustup target add aarch64-unknown-linux-musl
+          cargo build --release --locked --manifest-path rust-src/Cargo.toml --target aarch64-unknown-linux-musl
+      - name: unit tests
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: cargo test --locked --manifest-path rust-src/Cargo.toml
+      - name: no dynamic loader dependency
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          file rust-src/target/aarch64-unknown-linux-musl/release/qr
+          if readelf -d rust-src/target/aarch64-unknown-linux-musl/release/qr | grep -q NEEDED; then
+            echo "the binary needs shared libraries"
+            exit 1
+          fi
+      - name: runs on alpine with nothing installed
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          chmod +x rust-src/target/aarch64-unknown-linux-musl/release/qr
+          docker run --rm -v "$PWD/rust-src/target/aarch64-unknown-linux-musl/release:/app:ro" alpine:3.21 /app/qr --version
+      - name: gate dependencies
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: python -m pip install pillow zxing-cpp
+      - name: gate on the static binary
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          chmod +x rust-src/target/aarch64-unknown-linux-musl/release/qr
+          python tools/gate.py --target rust-src/target/aarch64-unknown-linux-musl/release/qr
+      - name: cli matrix on the static binary
+        if: hashFiles('rust-src/Cargo.toml') != ''
+        run: |
+          chmod +x rust-src/target/aarch64-unknown-linux-musl/release/qr
+          python tools/argv_matrix.py --target rust-src/target/aarch64-unknown-linux-musl/release/qr
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('rust-src/Cargo.toml') != ''
+        with:
+          name: qr-linux-arm64-musl
+          path: rust-src/target/aarch64-unknown-linux-musl/release/qr
+          if-no-files-found: error
+
   shipped:
     name: shipped binaries
     runs-on: ubuntu-latest
@@ -169,3 +255,23 @@ jobs:
         run: |
           chmod +x bin/qr
           docker run --rm -v "$PWD/bin:/app:ro" alpine:3.21 /app/qr --version
+
+  shipped-arm64:
+    name: shipped arm64 binary
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - if: hashFiles('bin/qr-arm64') == ''
+        run: echo "bin/qr-arm64 is not committed yet, skipping"
+      - name: committed linux arm64 binary is static
+        if: hashFiles('bin/qr-arm64') != ''
+        run: |
+          if readelf -d bin/qr-arm64 | grep -q NEEDED; then
+            echo "bin/qr-arm64 needs shared libraries"
+            exit 1
+          fi
+      - name: committed linux arm64 binary runs on alpine
+        if: hashFiles('bin/qr-arm64') != ''
+        run: |
+          chmod +x bin/qr-arm64
+          docker run --rm -v "$PWD/bin:/app:ro" alpine:3.21 /app/qr-arm64 --version

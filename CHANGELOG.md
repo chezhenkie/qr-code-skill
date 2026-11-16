@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.0
+
+### New features
+
+#### All platforms
+
+* Native ARM64 binaries: `bin/qr-arm64.exe` for Windows ARM64 and `bin/qr-arm64` for Linux ARM64, statically linked like the x86_64 binary.
+
+### Changes
+
+* `SKILL.md` names the binary for the host architecture.
+
 ## 0.10.1
 
 ### Changes

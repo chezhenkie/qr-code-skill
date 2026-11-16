@@ -19,8 +19,10 @@ Both samples come from `bin/qr.exe --save "https://example.com" -o docs/demo-qr.
 | File | Purpose |
 |---|---|
 | `SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
-| `bin/qr.exe` | Windows console binary |
+| `bin/qr.exe` | Windows x86_64 console binary |
+| `bin/qr-arm64.exe` | Windows ARM64 console binary |
 | `bin/qr` | Linux x86_64 binary, statically linked |
+| `bin/qr-arm64` | Linux ARM64 binary, statically linked |
 | `rust-src/` | The crate: command line, encoder, PNG writer, terminal renderer, viewer template |
 | `tools/gate.py` | 45-check acceptance gate over the shipped binary |
 | `tools/argv_matrix.py` | 30-case command-line harness against the frozen fixture |
@@ -31,7 +33,7 @@ Both samples come from `bin/qr.exe --save "https://example.com" -o docs/demo-qr.
 
 ## Install
 
-The skill payload is `SKILL.md` and `bin/`. Clone the repository, then copy both into the skills folder for your agent and name the folder `qr`. The folder name must match the `name` in `SKILL.md`.
+The skill payload is `SKILL.md` and `bin/`. Clone the repository, then copy both into the skills folder for your agent and name the folder `qr`. The folder name must match the `name` in `SKILL.md`; `SKILL.md` names the binary for the host architecture.
 
 ```sh
 git clone https://github.com/chezhenkie/qr-code-skill.git
@@ -151,7 +153,7 @@ python tools/argv_matrix.py
 The gate runs 45 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, a truncated PNG, and the terminal rendering, which is rebuilt from the printed blocks into a bitmap, decoded, and checked for an empty working directory. The matrix compares 30 command-line cases with the frozen fixture.
 Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing. Both tools write their fixtures under `tools/.artifacts` and delete them on exit.
 
-CI runs the gate and the matrix on Windows and Linux, builds the crate for both targets, checks that the Linux binary has no dynamic dependency, and runs it on `alpine:3.21`. No local Rust toolchain is needed.
+CI runs the gate and the matrix on Windows and Linux for x86_64 and ARM64, builds the crate for all four targets, checks that both Linux binaries have no dynamic dependency, and runs them on `alpine:3.21`. No local Rust toolchain is needed.
 
 ## Limits
 
@@ -161,7 +163,7 @@ CI runs the gate and the matrix on Windows and Linux, builds the crate for both 
 - Long text makes a dense symbol, so raise `--scale` for screen scanning. 2331 bytes at scale 100 is 18500 pixels per side.
 - Text is stored as UTF-8. Text that a Shift-JIS encoder would place in kanji mode is written as bytes, so the symbol can need more versions.
 - The viewer page loads the PNG from the same folder; copy both files together.
-- Prebuilt binaries cover Windows x86_64 and Linux x86_64. `cargo` builds other targets from `rust-src/`.
+- Prebuilt binaries cover Windows and Linux on x86_64 and ARM64. `cargo` builds other targets from `rust-src/`.
 
 ## Secrets
 

@@ -12,10 +12,12 @@ Turn short text into a scannable QR code without network access. The default is 
 
 The skill folder holds this file and `bin/`. The generator is a native binary, so the target needs no interpreter, package manager or build step.
 
-- Windows: `bin\qr.exe`
+- Windows x86_64: `bin\qr.exe`
+- Windows ARM64: `bin\qr-arm64.exe`
 - Linux x86_64: `bin/qr`, statically linked, so it runs on Alpine and other images with no runtime package.
+- Linux ARM64: `bin/qr-arm64`, statically linked, same rule.
 
-Both binaries come from one source tree and report the same version with `--version`.
+All four binaries come from one source tree and report the same version with `--version`.
 
 ## Usage
 
@@ -26,7 +28,7 @@ Run the binary from the folder that holds this file, or call it by absolute path
 & "$env:USERPROFILE\.config\opencode\skills\qr\bin\qr.exe" --save -f .\secret.txt -o .\qr\secret.png --scale 12 --html --title "phone token"
 ```
 
-On Linux the binary is `~/.config/opencode/skills/qr/bin/qr` with the same arguments.
+On Linux the binary is `~/.config/opencode/skills/qr/bin/qr`, or `bin/qr-arm64` on ARM64, with the same arguments.
 
 - With no output option the symbol goes to stdout and nothing is written.
 - `--save` writes the PNG, at `-o` when given, default `qr.png`; the absolute path is printed on stdout.

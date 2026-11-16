@@ -1,10 +1,10 @@
 """Freeze and check the command-line surface of the generator.
 
 The fixture in spec/argv-matrix.json records exit code, stdout and stderr for
-each case. Cases run against bin\\qr.exe on Windows and bin/qr elsewhere; the
-harness normalises the program name and scratch paths, collapses whitespace in
-stderr, and compares help stdout with whitespace collapsed because the usage
-line wraps on the program name.
+each case. Cases run against the binary for the host architecture under bin, or
+the one given with --target; the harness normalises the program name and scratch
+paths, collapses whitespace in stderr, and compares help stdout with whitespace
+collapsed because the usage line wraps on the program name.
 
 Usage:
   python tools/argv_matrix.py                         check the shipped binary
@@ -15,6 +15,7 @@ Usage:
 import atexit
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -40,7 +41,10 @@ atexit.register(cleanup)
 
 
 def default_target():
-    return os.path.join(REPO, "bin", "qr.exe" if os.name == "nt" else "qr")
+    name = "qr-arm64" if platform.machine().lower() in ("arm64", "aarch64") else "qr"
+    if os.name == "nt":
+        name += ".exe"
+    return os.path.join(REPO, "bin", name)
 
 CASES = [
     {"id": "no-args", "argv": []},
