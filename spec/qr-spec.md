@@ -70,7 +70,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
-| NFR-10 | The Windows binary starts with no runtime redistributable. Size under 4 MB per binary. Measured on the 0.10.1 artifacts: 249856 bytes for `qr.exe`, 656992 for `qr`. |
+| NFR-10 | The Windows binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.0.0 artifacts: 249856 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 656968 for `qr`, 715976 for `qr-arm64`. |
 | NFR-11 | The build uses one source tree and one version for all four binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
@@ -194,9 +194,9 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-22 | gate exit code and stdout | `version prints one line` |
 | QR-23, QR-24, NFR-12 | gate terminal rebuild, directory listing and save default | `term exits 0 with no stderr`, `term writes nothing to disk`, `term decodes to the payload`, `term keeps a square white quiet zone`, `term border 0 gives a bare 21-module grid`, `term oversize writes nothing`, `save writes qr.png and prints the path`, `save writes a decodable PNG` |
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
-| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 249856 and 656992 bytes |
-| D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green on both builds (run 43731783541) |
-| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | 0.10.1: both print 0.10.1; v0.10.1 is tagged on 7517fd1 and published with two archives, 129882 and 298743 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 45 of 45 and the matrix 30 of 30 |
+| NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 249856, 235008, 656968 and 715976 bytes |
+| D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green for both Linux builds, and the four binaries pass the gate on their own runners (run 43804399003) |
+| D-04, D-05 | release notes carry sizes and digests; the four binaries report the same `--version` | 1.0.0: all four print 1.0.0; v1.0.0 is tagged on a9be694 and published with four archives, 130021, 126434, 298834 and 297121 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 45 of 45 and the matrix 30 of 30 |
 
 Acceptance criteria for the port, and the evidence: the gate passes with the Rust binary in place of the script (36 of 36 on both builds); the CLI matrix matches 27 of 27 on both; the differential sweep compares exit code, printed names, payload decode, dimensions and page bytes over 91 payloads and 9 pages on Windows and Linux, with PNG bytes not compared across implementations because a different encoder produces a different valid file (QR-12 and NFR-07 cover what matters). Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep ran before the Python line was deleted (run 43732908549); `tools/diff_python.py` stays for a re-run against a script taken from history, and the permanent checks are the gate, the matrix and symbol parity. The Linux binary also runs on Alpine x86_64 in that workflow.
 
@@ -217,6 +217,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
 | Release, 0.10.1 | shipped 2026-11-16: v0.10.1 tagged on 7517fd1, two archives published, assets re-verified at the release page |
+| Release, 1.0.0 | shipped 2026-11-16: v1.0.0 tagged on a9be694, four archives published, assets re-verified at the release page |
 
 Port increments, each closing at Gate 2:
 

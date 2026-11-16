@@ -55,7 +55,7 @@ mkdir -p ~/.config/opencode/skills/qr
 cp -r SKILL.md bin ~/.config/opencode/skills/qr
 ```
 
-`~` is your home directory; if the shell does not expand it, use the full path. The [v0.10.1 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v0.10.1) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
+`~` is your home directory; if the shell does not expand it, use the full path. The [v1.0.0 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.0.0) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
 
 ## Use
 
