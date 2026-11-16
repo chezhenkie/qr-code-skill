@@ -9,7 +9,7 @@
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
-| Related | SKILL.md, README.md, tools/gate.py, tools/argv_matrix.py, spec/argv-matrix.json, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
+| Related | agent-skill/SKILL.md, README.md, tools/gate.py, tools/argv_matrix.py, spec/argv-matrix.json, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
 | Scope | the shipped skill, SKILL.md and the generator; the gate is verification, not product |
 
 ## 1. Problem and goals
@@ -91,7 +91,7 @@ Data flow: argv -> validated payload -> symbol -> painted text on stdout by defa
 
 There is no persistent state, no configuration file and no service. Each run is independent.
 
-Repository layout: the crate lives in `rust-src\`, the gate in `tools\`, the built binaries in `bin\`. `spec\` and `docs\` hold documents and history. `temp\` and `logs\` are untracked scratch. Nothing in the tree is shipped except `SKILL.md` and `bin\`.
+Repository layout: the skill payload lives in `agent-skill\` with `SKILL.md` and `bin\`; the crate lives in `rust-src\`, the gate in `tools\`, and `spec\` and `docs\` hold documents and history. `temp\`, `logs\` and `releases\` are untracked scratch. Nothing in the tree is shipped except the `agent-skill\` folder.
 
 The Python line was the source of truth until 0.8.0. The generator is deleted from the tree, git history holds the only copies, and the product does not run it.
 
@@ -123,7 +123,7 @@ Files: in save mode the PNG is the only required output and the page is optional
 | D-02 | `bin/qr` and `bin/qr-arm64` are built for `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`, statically linked, so they run on Alpine with no runtime package. |
 | D-03 | The two Windows binaries use the console subsystem, so a shell waits for them and captures stdout, stderr and the exit code. No GUI subsystem, no detached console. |
 | D-04 | All five binaries are produced from one source tree and carry the same version, printed by `--version`. |
-| D-05 | The built binaries are committed under `bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
+| D-05 | The built binaries are committed under `agent-skill/bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
 Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. 1.0.0 marks the stable install model: native binaries for every shipped platform in one folder, one command line, no planned breaking change.
@@ -278,3 +278,4 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-16 | 0.10.1 lists `--version` in the help text and the usage line | the fixture is frozen from the Rust binary now, so the 0.7.1 text no longer constrains the help |
 | 2026-11-16 | 1.0.0 adds ARM64 (`aarch64-unknown-linux-musl` and Windows ARM64) and marks the stable install model | the arm64 runners are GA in public repositories, the gate dependencies publish arm64 wheels, and the code has no architecture-specific part |
 | 2026-11-16 | 1.1.0 adds macOS ARM64 and leaves Intel macOS to a source build | macos-latest is an arm64 runner, the gate dependencies publish macOS arm64 wheels, and the code has no target-specific part |
+| 2026-11-16 | The skill payload moves to `agent-skill/`, holding `SKILL.md` and `bin/`; the crate, tools, spec and docs stay at the root | the root stays readable, and the install unit is one visible folder |

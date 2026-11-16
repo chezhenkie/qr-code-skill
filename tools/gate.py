@@ -1,6 +1,6 @@
 """Black-box acceptance gate for the shipped generator.
 
-Runs the binary for the host architecture from bin, or the one given with
+Runs the binary for the host architecture from agent-skill/bin, or the one given with
 --target. Needs zxing-cpp and Pillow to decode the produced PNGs.
 """
 import atexit
@@ -21,12 +21,12 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 def default_target():
     arm = platform.machine().lower() in ("arm64", "aarch64")
     if os.name == "nt":
-        return os.path.join(REPO, "bin", "qr-arm64.exe" if arm else "qr.exe")
+        return os.path.join(REPO, "agent-skill", "bin", "qr-arm64.exe" if arm else "qr.exe")
     if sys.platform == "darwin":
         if not arm:
             raise SystemExit("no Intel macOS binary; pass --target or build from rust-src")
-        return os.path.join(REPO, "bin", "qr-macos-arm64")
-    return os.path.join(REPO, "bin", "qr-arm64" if arm else "qr")
+        return os.path.join(REPO, "agent-skill", "bin", "qr-macos-arm64")
+    return os.path.join(REPO, "agent-skill", "bin", "qr-arm64" if arm else "qr")
 
 
 TARGET = (

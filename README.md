@@ -12,18 +12,18 @@ Click a sample to open the full-size image.
 | [<img src="docs/demo-qr.png" width="220" alt="QR code for https://example.com">](docs/demo-qr.png) | [<img src="docs/demo-page.png" width="220" alt="Viewer page with the QR code and its caption">](docs/demo-page.png) |
 | Text input, 25 modules, scale 10 | `--html` page, image at 70vmin |
 
-Both samples come from `bin/qr.exe --save "https://example.com" -o docs/demo-qr.png --scale 10 --html --title "Scan with the phone camera"`. The caption is a page title and never part of the code.
+Both samples come from `agent-skill/bin/qr.exe --save "https://example.com" -o docs/demo-qr.png --scale 10 --html --title "Scan with the phone camera"`. The caption is a page title and never part of the code.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
-| `bin/qr.exe` | Windows x86_64 console binary |
-| `bin/qr-arm64.exe` | Windows ARM64 console binary |
-| `bin/qr` | Linux x86_64 binary, statically linked |
-| `bin/qr-arm64` | Linux ARM64 binary, statically linked |
-| `bin/qr-macos-arm64` | macOS ARM64 binary |
+| `agent-skill/SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
+| `agent-skill/bin/qr.exe` | Windows x86_64 console binary |
+| `agent-skill/bin/qr-arm64.exe` | Windows ARM64 console binary |
+| `agent-skill/bin/qr` | Linux x86_64 binary, statically linked |
+| `agent-skill/bin/qr-arm64` | Linux ARM64 binary, statically linked |
+| `agent-skill/bin/qr-macos-arm64` | macOS ARM64 binary |
 | `rust-src/` | The crate: command line, encoder, PNG writer, terminal renderer, viewer template |
 | `tools/gate.py` | 45-check acceptance gate over the shipped binary |
 | `tools/argv_matrix.py` | 30-case command-line harness against the frozen fixture |
@@ -34,7 +34,7 @@ Both samples come from `bin/qr.exe --save "https://example.com" -o docs/demo-qr.
 
 ## Install
 
-The skill payload is `SKILL.md` and `bin/`. Clone the repository, then copy both into the skills folder for your agent and name the folder `qr`. The folder name must match the `name` in `SKILL.md`; `SKILL.md` names the binary for the host architecture.
+The skill is the `agent-skill/` folder: `SKILL.md` and `bin/`. Clone the repository, then copy the folder into the skills folder for your agent and name it `qr`. The folder name must match the `name` in `SKILL.md`; `SKILL.md` names the binary for the host architecture.
 
 ```sh
 git clone https://github.com/chezhenkie/qr-code-skill.git
@@ -48,12 +48,12 @@ git clone https://github.com/chezhenkie/qr-code-skill.git
 | OMP | `~/.omp/agent/skills` | `.omp/skills` |
 
 ```powershell
-Copy-Item -Recurse .\SKILL.md, .\bin "$HOME\.config\opencode\skills\qr"
+Copy-Item -Recurse .\agent-skill\SKILL.md, .\agent-skill\bin "$HOME\.config\opencode\skills\qr"
 ```
 
 ```sh
 mkdir -p ~/.config/opencode/skills/qr
-cp -r SKILL.md bin ~/.config/opencode/skills/qr
+cp -r agent-skill/SKILL.md agent-skill/bin ~/.config/opencode/skills/qr
 ```
 
 `~` is your home directory; if the shell does not expand it, use the full path. The [v1.1.0 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.1.0) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
@@ -77,12 +77,12 @@ Save a QR code for notes/token.txt to qr/token.png with a viewer page for the ph
 Direct use, from the repository root:
 
 ```powershell
-.\bin\qr.exe "https://example.com"
-.\bin\qr.exe --save -f .\notes.txt -o .\qr\notes.png --scale 12 --html --title "notes"
+.\agent-skill\bin\qr.exe "https://example.com"
+.\agent-skill\bin\qr.exe --save -f .\notes.txt -o .\qr\notes.png --scale 12 --html --title "notes"
 ```
 
 ```sh
-./bin/qr "https://example.com"
+./agent-skill/bin/qr "https://example.com"
 ```
 
 The default mode prints the symbol and exits 0. In save mode the run prints the absolute path of the PNG on stdout, and with `--html` the page path after it. Arguments are checked before a file is written. A filesystem failure prints one `FAIL read:` or `FAIL write:` line and exits 1; text beyond the capacity at level M prints one `FAIL store:` line and leaves no file; a usage error prints the help text and exits 2.
@@ -92,11 +92,11 @@ The default mode prints the symbol and exits 0. In save mode the run prints the 
 The terminal display is the default and needs no flag. The symbol is rendered from memory as black half blocks on a painted white background, with the quiet zone, two module rows per text row, so a dark terminal still shows the polarity a scanner expects.
 
 ```powershell
-.\bin\qr.exe "https://example.com"
+.\agent-skill\bin\qr.exe "https://example.com"
 ```
 
 ```sh
-./bin/qr "https://example.com"
+./agent-skill/bin/qr "https://example.com"
 ```
 
 The output is UTF-8 text with a colour prefix and needs a monospaced terminal. Keep the window wider than the code: a 25-module symbol with the default quiet zone is 33 columns, and a wrapped line cannot be scanned. `--border` changes the quiet zone in both modes.
@@ -106,8 +106,8 @@ The output is UTF-8 text with a colour prefix and needs a monospaced terminal. K
 `--save` writes the PNG, and so does any option that only makes sense for a file: `-o`, `--scale`, `--html`, `--title`. The PNG goes to `qr.png` in the current directory unless `-o` names another path.
 
 ```powershell
-.\bin\qr.exe --save "https://example.com" -o .\qr\out.png
-.\bin\qr.exe "https://example.com" -o .\qr\out.png --html --title "scan me"
+.\agent-skill\bin\qr.exe --save "https://example.com" -o .\qr\out.png
+.\agent-skill\bin\qr.exe "https://example.com" -o .\qr\out.png --html --title "scan me"
 ```
 
 ## Options

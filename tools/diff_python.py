@@ -7,7 +7,7 @@ files for the same symbol.
 
 Usage:
   python tools/diff_python.py --target rust-src/target/release/qr.exe
-  python tools/diff_python.py --target bin/qr --python python/make-qr.py
+  python tools/diff_python.py --target agent-skill/bin/qr --python python/make-qr.py
 
 The Python reference is removed at 0.8.0. This tool is the acceptance step
 before that, not a permanent CI job; needs Pillow, zxing-cpp and segno.

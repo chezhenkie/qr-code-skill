@@ -278,37 +278,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - if: hashFiles('bin/qr') == '' && hashFiles('bin/qr.exe') == ''
-        run: echo "bin is not committed yet, skipping"
+      - if: hashFiles('agent-skill/bin/qr') == '' && hashFiles('agent-skill/bin/qr.exe') == ''
+        run: echo "agent-skill/bin is not committed yet, skipping"
       - name: committed linux binary is static
-        if: hashFiles('bin/qr') != ''
+        if: hashFiles('agent-skill/bin/qr') != ''
         run: |
-          if readelf -d bin/qr | grep -q NEEDED; then
-            echo "bin/qr needs shared libraries"
+          if readelf -d agent-skill/bin/qr | grep -q NEEDED; then
+            echo "agent-skill/bin/qr needs shared libraries"
             exit 1
           fi
       - name: committed linux binary runs on alpine
-        if: hashFiles('bin/qr') != ''
+        if: hashFiles('agent-skill/bin/qr') != ''
         run: |
-          chmod +x bin/qr
-          docker run --rm -v "$PWD/bin:/app:ro" alpine:3.21 /app/qr --version
+          chmod +x agent-skill/bin/qr
+          docker run --rm -v "$PWD/agent-skill/bin:/app:ro" alpine:3.21 /app/qr --version
 
   shipped-arm64:
     name: shipped arm64 binary
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - if: hashFiles('bin/qr-arm64') == ''
-        run: echo "bin/qr-arm64 is not committed yet, skipping"
+      - if: hashFiles('agent-skill/bin/qr-arm64') == ''
+        run: echo "agent-skill/bin/qr-arm64 is not committed yet, skipping"
       - name: committed linux arm64 binary is static
-        if: hashFiles('bin/qr-arm64') != ''
+        if: hashFiles('agent-skill/bin/qr-arm64') != ''
         run: |
-          if readelf -d bin/qr-arm64 | grep -q NEEDED; then
-            echo "bin/qr-arm64 needs shared libraries"
+          if readelf -d agent-skill/bin/qr-arm64 | grep -q NEEDED; then
+            echo "agent-skill/bin/qr-arm64 needs shared libraries"
             exit 1
           fi
       - name: committed linux arm64 binary runs on alpine
-        if: hashFiles('bin/qr-arm64') != ''
+        if: hashFiles('agent-skill/bin/qr-arm64') != ''
         run: |
-          chmod +x bin/qr-arm64
-          docker run --rm -v "$PWD/bin:/app:ro" alpine:3.21 /app/qr-arm64 --version
+          chmod +x agent-skill/bin/qr-arm64
+          docker run --rm -v "$PWD/agent-skill/bin:/app:ro" alpine:3.21 /app/qr-arm64 --version

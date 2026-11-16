@@ -1,7 +1,7 @@
 """Freeze and check the command-line surface of the generator.
 
 The fixture in spec/argv-matrix.json records exit code, stdout and stderr for
-each case. Cases run against the binary for the host architecture under bin, or
+each case. Cases run against the binary for the host architecture under agent-skill/bin, or
 the one given with --target; the harness normalises the program name and scratch
 paths, collapses whitespace in stderr, and compares help stdout with whitespace
 collapsed because the usage line wraps on the program name.
@@ -43,12 +43,12 @@ atexit.register(cleanup)
 def default_target():
     arm = platform.machine().lower() in ("arm64", "aarch64")
     if os.name == "nt":
-        return os.path.join(REPO, "bin", "qr-arm64.exe" if arm else "qr.exe")
+        return os.path.join(REPO, "agent-skill", "bin", "qr-arm64.exe" if arm else "qr.exe")
     if sys.platform == "darwin":
         if not arm:
             raise SystemExit("no Intel macOS binary; pass --target or build from rust-src")
-        return os.path.join(REPO, "bin", "qr-macos-arm64")
-    return os.path.join(REPO, "bin", "qr-arm64" if arm else "qr")
+        return os.path.join(REPO, "agent-skill", "bin", "qr-macos-arm64")
+    return os.path.join(REPO, "agent-skill", "bin", "qr-arm64" if arm else "qr")
 
 CASES = [
     {"id": "no-args", "argv": []},
