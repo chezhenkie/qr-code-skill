@@ -3,7 +3,7 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const USAGE_TAIL: &str =
-    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text]";
+    "[-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text]";
 const WIDTH: usize = 80;
 
 #[derive(Debug, PartialEq)]
@@ -386,7 +386,7 @@ pub fn usage(prog: &str) -> String {
     text
 }
 
-/// The help text. --version is omitted so the text stays equal to the frozen fixture.
+/// The help text, with options in registration order.
 pub fn help(prog: &str) -> String {
     let mut text = usage(prog);
     text.push('\n');
@@ -402,6 +402,7 @@ pub fn help(prog: &str) -> String {
     text.push_str("  --html           write a viewer page next to the PNG; implies --save\n");
     text.push_str("  --title TITLE    viewer page title; implies --save\n");
     text.push_str("  --save           write the PNG instead of printing to the terminal\n");
+    text.push_str("  --version        show program's version number and exit\n");
     text
 }
 
@@ -460,7 +461,7 @@ mod tests {
     }
 
     #[test]
-    fn version_is_a_hidden_flag() {
+    fn version_is_matched_by_prefix() {
         assert_eq!(parse(&argv(&["--version"])), Outcome::Version);
         assert_eq!(parse(&argv(&["--vers"])), Outcome::Version);
     }
@@ -527,7 +528,7 @@ mod tests {
     #[test]
     fn help_flat_matches_the_frozen_fixture() {
         let flat = help("make-qr.py").split_whitespace().collect::<Vec<_>>().join(" ");
-        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] Generate an offline QR code, printed to the terminal or saved as a PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT save the PNG at this path; implies --save --scale SCALE pixels per module 1-100 (default 10); implies --save --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG; implies --save --title TITLE viewer page title; implies --save --save write the PNG instead of printing to the terminal";
+        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] Generate an offline QR code, printed to the terminal or saved as a PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT save the PNG at this path; implies --save --scale SCALE pixels per module 1-100 (default 10); implies --save --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG; implies --save --title TITLE viewer page title; implies --save --save write the PNG instead of printing to the terminal --version show program's version number and exit";
         assert_eq!(flat, want);
     }
 

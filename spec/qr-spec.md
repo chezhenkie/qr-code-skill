@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 0.10.0 |
+| Version | 0.10.1 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -51,7 +51,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | QR-17 | Exit 0 on success, 1 on a runtime failure, 2 on a usage error. | n/a |
 | QR-18 | An existing output file is replaced. | QR-19 |
 | QR-19 | Any filesystem failure, including an unreadable, missing or non-UTF-8 `-f` file, ends with a one-line error on stderr and exit 1, with no traceback and no partial file left behind. | n/a |
-| QR-20 | `-h` and `--help` print usage on stdout and exit 0; an unknown option is a usage error. | exit 2 for unknown options |
+| QR-20 | `-h` and `--help` print usage on stdout and exit 0; the text lists every option, `--version` included, in the option list and the usage line. An unknown option is a usage error. | exit 2 for unknown options |
 | QR-21 | Standard input is never read. | n/a |
 | QR-22 | `--version` prints the single version string and exits 0, on both platforms. | exit 0 always |
 | QR-23 | With no output option the symbol is printed to stdout as UTF-8 text, quiet zone included, black modules on a painted light background, two module rows per text row. It writes no file, creates no directory and prints no path. | a failed stdout write is one `FAIL write: stdout` line and exit 1 |
@@ -182,14 +182,14 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-08, QR-09 | gate exit code | `rejects scale 0`, `rejects border 17` |
 | QR-10 | gate decode level and pixels | `short payload level M`, `url level M not boosted`, `short payload regular 21 modules` |
 | QR-11 | gate exit code and file absence | `rejects oversize` |
-| QR-13 | gate unit on a truncated file | `png tail detects truncation`; the size-mismatch branch is not injectable from outside and stays unproven |
+| QR-13 | unit tests on the probe and the verdict, gate unit on a truncated file | `verify_rejects_a_size_mismatch`, `verify_names_the_size_and_the_tail`; the gate covers truncation with `png tail detects truncation` |
 | QR-14 | gate stdout | `two paths png then html` |
 | QR-15 | gate page inspection | `viewer references png`, `viewer hides text`, `viewport tag present` |
 | QR-16 | gate page inspection | `title escaped in page`, `title never encoded` |
 | QR-17 | exit code asserted in every check | all 36 |
 | QR-18 | gate decode after a rewrite | `overwrite replaces the file` |
 | QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write` |
-| QR-20 | gate exit code | `help exits 0` |
+| QR-20 | gate exit code and matrix help cases | `help exits 0`; the matrix compares the help text after whitespace collapse |
 | QR-21 | gate decode with stdin attached | `stdin is ignored` |
 | QR-22 | gate exit code and stdout | `version prints one line` |
 | QR-23, QR-24, NFR-12 | gate terminal rebuild, directory listing and save default | `term exits 0 with no stderr`, `term writes nothing to disk`, `term decodes to the payload`, `term keeps a square white quiet zone`, `term border 0 gives a bare 21-module grid`, `term oversize writes nothing`, `save writes qr.png and prints the path`, `save writes a decodable PNG` |
@@ -211,6 +211,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, port increments | P1 to P4 closed |
 | Build, 0.9.0 | P5: terminal display behind `--term`, 47 checks on both platforms |
 | Build, 0.10.0 | P6: terminal display by default, save mode behind `--save` and the file options |
+| Build, 0.10.1 | help lists `--version`; unit tests cover the post-write size and tail verdict |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
@@ -269,3 +270,4 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-15 | The release attaches two platform archives, each holding `SKILL.md`, `CHANGELOG.md`, `LICENSE` and one binary, rather than the binaries alone | the install unit is a folder copy, and the release manual rules out bare binaries |
 | 2026-11-15 | 0.9.0 put the terminal display behind `--term`; 0.10.0 made it the default and replaced that flag with `--save` | the main use is a code scanned once, so the mode that cannot leave a file must need no flag; the file options already announce a file |
 | 2026-11-15 | Terminal rendering uses half blocks on a painted bright-white background, two module rows per text row | a module stays square in a terminal cell, and a dark terminal still shows the dark-on-light polarity a scanner expects |
+| 2026-11-16 | 0.10.1 lists `--version` in the help text and the usage line | the fixture is frozen from the Rust binary now, so the 0.7.1 text no longer constrains the help |

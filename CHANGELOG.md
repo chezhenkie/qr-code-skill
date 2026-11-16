@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+
+### Changes
+
+* The help text and the usage line list `--version`.
+
 ## 0.10.0
 
 ### New features

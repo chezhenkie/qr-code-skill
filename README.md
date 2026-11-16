@@ -121,7 +121,7 @@ The output is UTF-8 text with a colour prefix and needs a monospaced terminal. K
 | `--html` | Write a viewer page beside the PNG; implies `--save` | off |
 | `--title TITLE` | Caption on the viewer page; implies `--save` | none |
 | `-h, --help` | Print the usage text | |
-| `--version` | Print the version; the flag is not listed in the help text | |
+| `--version` | Print the version | |
 
 Text and file input are stripped of surrounding whitespace before encoding.
 In save mode the PNG is written by the tool itself as a 1-bit greyscale image, then the header is checked against the symbol size and the closing chunk is required; a mismatch removes the file and exits 1, so a printed path points at a complete image of the intended module count. The page loads that image by file name, scales it to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.

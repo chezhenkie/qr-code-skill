@@ -60,6 +60,25 @@ fn read_full<R: Read>(reader: &mut R, buffer: &mut [u8]) -> io::Result<usize> {
     Ok(filled)
 }
 
+/// The post-write verdict: Ok when the header size matches the symbol and the
+/// file ends with IEND. Err carries the stderr line; the caller removes the file.
+pub fn verify(probe: &Probe, side: u32) -> Result<(), String> {
+    if probe.size != Some((side, side)) {
+        let shown = match probe.size {
+            Some((width, height)) => format!("({}, {})", width, height),
+            None => "None".to_string(),
+        };
+        return Err(format!(
+            "FAIL png size {} expected ({}, {})",
+            shown, side, side
+        ));
+    }
+    if !probe.iend {
+        return Err("FAIL png tail: missing IEND".to_string());
+    }
+    Ok(())
+}
+
 /// Write a 1-bit greyscale PNG: dark modules black, everything else white.
 pub fn write_png<W: Write>(out: &mut W, code: &QrCode, scale: u32, border: u32) -> io::Result<()> {
     let modules = code.size() as usize;
@@ -316,5 +335,68 @@ mod tests {
         let probe = probe_reader(&mut short).expect("probe");
         assert_eq!(probe.size, Some((58, 58)));
         assert!(!probe.iend);
+    }
+
+    #[test]
+    fn verify_rejects_a_size_mismatch() {
+        let code = QrCode::encode_text("ab", QrCodeEcc::Medium).expect("encode");
+        let mut bytes = Vec::new();
+        write_png(&mut bytes, &code, 2, 4).expect("write");
+        // IHDR width sits at 16 after signature, chunk length and type.
+        let declared = be_u32(&bytes[16..20]);
+        bytes[16..20].copy_from_slice(&(declared + 1).to_be_bytes());
+        let mut reader = Cursor::new(&bytes);
+        let probe = probe_reader(&mut reader).expect("probe");
+        assert_eq!(probe.size, Some((declared + 1, declared)));
+        assert!(probe.iend);
+        let want = format!(
+            "FAIL png size ({}, {}) expected ({}, {})",
+            declared + 1,
+            declared,
+            declared,
+            declared
+        );
+        assert_eq!(verify(&probe, declared), Err(want));
+    }
+
+    #[test]
+    fn verify_names_the_size_and_the_tail() {
+        let ok = Probe {
+            size: Some((58, 58)),
+            iend: true,
+        };
+        assert_eq!(verify(&ok, 58), Ok(()));
+        let absent = Probe {
+            size: None,
+            iend: true,
+        };
+        assert_eq!(
+            verify(&absent, 58),
+            Err("FAIL png size None expected (58, 58)".to_string())
+        );
+        let wider = Probe {
+            size: Some((59, 58)),
+            iend: true,
+        };
+        assert_eq!(
+            verify(&wider, 58),
+            Err("FAIL png size (59, 58) expected (58, 58)".to_string())
+        );
+        let taller = Probe {
+            size: Some((58, 59)),
+            iend: true,
+        };
+        assert_eq!(
+            verify(&taller, 58),
+            Err("FAIL png size (58, 59) expected (58, 58)".to_string())
+        );
+        let cut = Probe {
+            size: Some((58, 58)),
+            iend: false,
+        };
+        assert_eq!(
+            verify(&cut, 58),
+            Err("FAIL png tail: missing IEND".to_string())
+        );
     }
 }

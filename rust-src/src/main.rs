@@ -106,22 +106,16 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         return fail("write", &out, &err);
     }
 
-    let (got, complete) = match png::probe(Path::new(&out)) {
-        Ok(probe) => (probe.size, probe.iend),
-        Err(_) => (None, false),
+    let probe = match png::probe(Path::new(&out)) {
+        Ok(probe) => probe,
+        Err(_) => png::Probe {
+            size: None,
+            iend: false,
+        },
     };
-    if got != Some((side, side)) {
+    if let Err(line) = png::verify(&probe, side) {
         let _ = fs::remove_file(&out);
-        let shown = match got {
-            Some((width, height)) => format!("({}, {})", width, height),
-            None => "None".to_string(),
-        };
-        eprintln!("FAIL png size {} expected ({}, {})", shown, side, side);
-        return 1;
-    }
-    if !complete {
-        let _ = fs::remove_file(&out);
-        eprintln!("FAIL png tail: missing IEND");
+        eprintln!("{}", line);
         return 1;
     }
 
