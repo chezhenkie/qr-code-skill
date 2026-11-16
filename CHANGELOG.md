@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0
+
+### New features
+
+#### macOS ARM64
+
+* Native binary, `bin/qr-macos-arm64`. Intel Macs build from source.
+
+### Changes
+
+* `SKILL.md` names the binary for the host architecture, macOS included.
+
 ## 1.0.0
 
 ### New features

@@ -41,10 +41,14 @@ atexit.register(cleanup)
 
 
 def default_target():
-    name = "qr-arm64" if platform.machine().lower() in ("arm64", "aarch64") else "qr"
+    arm = platform.machine().lower() in ("arm64", "aarch64")
     if os.name == "nt":
-        name += ".exe"
-    return os.path.join(REPO, "bin", name)
+        return os.path.join(REPO, "bin", "qr-arm64.exe" if arm else "qr.exe")
+    if sys.platform == "darwin":
+        if not arm:
+            raise SystemExit("no Intel macOS binary; pass --target or build from rust-src")
+        return os.path.join(REPO, "bin", "qr-macos-arm64")
+    return os.path.join(REPO, "bin", "qr-arm64" if arm else "qr")
 
 CASES = [
     {"id": "no-args", "argv": []},

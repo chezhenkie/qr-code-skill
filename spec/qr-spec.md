@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -24,7 +24,7 @@ Goals:
 - G4: install is a folder copy with no interpreter, package manager or build step on the target.
 - G5: a code that only has to be looked at is shown without writing any file.
 
-Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, macOS builds. Decoding, other symbologies and image input are planned as separate crates after the public switch.
+Non-goals: decoding, batch generation, SVG or EPS output, logos or branding, animated codes, a choice of error-correction level, network delivery, a GUI, Intel macOS builds. Decoding, other symbologies and image input are planned as separate crates after the public switch.
 
 ## 2. Functional requirements
 
@@ -66,11 +66,11 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-03 | Repository text is ASCII with LF endings; generated images and gate scratch are not committed. |
 | NFR-04 | One PNG of a URL of 60 characters completes in under 1 s on the reference machine. Measured: 10.3 ms maximum over five runs. |
 | NFR-05 | Peak memory stays under 16 MiB for a 2000-byte payload. Measured: 0.97 MiB peak commit (job object) at the default scale. |
-| NFR-06 | The four builds behave identically for file output, exit codes and file names. |
+| NFR-06 | The five builds behave identically for file output, exit codes and file names. |
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
-| NFR-10 | The Windows binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.0.0 artifacts: 249856 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 656968 for `qr`, 715976 for `qr-arm64`. |
+| NFR-10 | The Windows and macOS binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.0.0 artifacts: 249856 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 656968 for `qr`, 715976 for `qr-arm64`. |
 | NFR-11 | The build uses one source tree and one version for all four binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
@@ -119,10 +119,10 @@ Files: in save mode the PNG is the only required output and the page is optional
 
 | Id | Requirement |
 |---|---|
-| D-01 | The installed skill folder holds `SKILL.md` and four binaries: `bin\qr.exe` and `bin\qr-arm64.exe` for Windows, `bin/qr` and `bin/qr-arm64` for Linux. One folder, no build step. `SKILL.md` names the binary for the host architecture. |
+| D-01 | The installed skill folder holds `SKILL.md` and five binaries: `bin\qr.exe` and `bin\qr-arm64.exe` for Windows, `bin/qr` and `bin/qr-arm64` for Linux, and `bin/qr-macos-arm64` for macOS ARM64. One folder, no build step. `SKILL.md` names the binary for the host architecture; Intel macOS is not shipped. |
 | D-02 | `bin/qr` and `bin/qr-arm64` are built for `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`, statically linked, so they run on Alpine with no runtime package. |
 | D-03 | The two Windows binaries use the console subsystem, so a shell waits for them and captures stdout, stderr and the exit code. No GUI subsystem, no detached console. |
-| D-04 | All four binaries are produced from one source tree and carry the same version, printed by `--version`. |
+| D-04 | All five binaries are produced from one source tree and carry the same version, printed by `--version`. |
 | D-05 | The built binaries are committed under `bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
@@ -213,6 +213,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 0.10.0 | P6: terminal display by default, save mode behind `--save` and the file options |
 | Build, 0.10.1 | help lists `--version`; unit tests cover the post-write size and tail verdict |
 | Build, 1.0.0 | ARM64 on both systems: aarch64 Linux musl and Windows ARM64, built on the arm64 runners; four binaries at 1.0.0 |
+| Build, 1.1.0 | macOS ARM64: aarch64-apple-darwin built on macos-latest, no Intel macOS binary |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
@@ -275,3 +276,4 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-15 | Terminal rendering uses half blocks on a painted bright-white background, two module rows per text row | a module stays square in a terminal cell, and a dark terminal still shows the dark-on-light polarity a scanner expects |
 | 2026-11-16 | 0.10.1 lists `--version` in the help text and the usage line | the fixture is frozen from the Rust binary now, so the 0.7.1 text no longer constrains the help |
 | 2026-11-16 | 1.0.0 adds ARM64 (`aarch64-unknown-linux-musl` and Windows ARM64) and marks the stable install model | the arm64 runners are GA in public repositories, the gate dependencies publish arm64 wheels, and the code has no architecture-specific part |
+| 2026-11-16 | 1.1.0 adds macOS ARM64 and leaves Intel macOS to a source build | macos-latest is an arm64 runner, the gate dependencies publish macOS arm64 wheels, and the code has no target-specific part |
