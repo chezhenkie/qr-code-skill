@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.0
+## 1.0.0
 
 ### New features
 
@@ -11,6 +11,7 @@
 ### Changes
 
 * `SKILL.md` names the binary for the host architecture.
+* Version 1.0.0 marks the stable install model and command line.
 
 ## 0.10.1
 

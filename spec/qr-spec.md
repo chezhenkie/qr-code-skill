@@ -5,7 +5,7 @@
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
 | Status | under review |
-| Version | 0.11.0 |
+| Version | 1.0.0 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -126,7 +126,7 @@ Files: in save mode the PNG is the only required output and the page is optional
 | D-05 | The built binaries are committed under `bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
-Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. The line stays below 1.0.0 until the skill has a stable install model and no planned breaking change.
+Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. 1.0.0 marks the stable install model: four native binaries in one folder, one command line, no planned breaking change.
 
 ## 6. Functionality and states
 
@@ -212,7 +212,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 0.9.0 | P5: terminal display behind `--term`, 47 checks on both platforms |
 | Build, 0.10.0 | P6: terminal display by default, save mode behind `--save` and the file options |
 | Build, 0.10.1 | help lists `--version`; unit tests cover the post-write size and tail verdict |
-| Build, 0.11.0 | ARM64 on both systems: aarch64 Linux musl and Windows ARM64, built on the arm64 runners |
+| Build, 1.0.0 | ARM64 on both systems: aarch64 Linux musl and Windows ARM64, built on the arm64 runners; four binaries at 1.0.0 |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
@@ -273,4 +273,4 @@ Gate 1 is closed; OQ-1 to OQ-5 are closed.
 | 2026-11-15 | 0.9.0 put the terminal display behind `--term`; 0.10.0 made it the default and replaced that flag with `--save` | the main use is a code scanned once, so the mode that cannot leave a file must need no flag; the file options already announce a file |
 | 2026-11-15 | Terminal rendering uses half blocks on a painted bright-white background, two module rows per text row | a module stays square in a terminal cell, and a dark terminal still shows the dark-on-light polarity a scanner expects |
 | 2026-11-16 | 0.10.1 lists `--version` in the help text and the usage line | the fixture is frozen from the Rust binary now, so the 0.7.1 text no longer constrains the help |
-| 2026-11-16 | 0.11.0 adds ARM64: `aarch64-unknown-linux-musl` and Windows ARM64 binaries built on the arm64 runners | the arm64 runners are GA in public repositories, the gate dependencies publish arm64 wheels, and the code has no architecture-specific part |
+| 2026-11-16 | 1.0.0 adds ARM64 (`aarch64-unknown-linux-musl` and Windows ARM64) and marks the stable install model | the arm64 runners are GA in public repositories, the gate dependencies publish arm64 wheels, and the code has no architecture-specific part |
