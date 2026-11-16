@@ -196,7 +196,7 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
 | NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 244736 and 648296 bytes |
 | D-01 to D-03, NFR-09 | install into a scratch folder, `readelf` shows no `NEEDED`, run on Alpine | scratch copy of `SKILL.md` and `bin` runs and prints both paths; the readelf and `alpine:3.21` jobs are green on both builds (run 43731783541) |
-| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | 0.9.0: both print 0.9.0; v0.9.0 is tagged on 7994592 and published with two archives, 129915 and 298905 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 47 of 47 and the matrix 32 of 32 |
+| D-04, D-05 | release notes carry sizes and digests; both binaries report the same `--version` | 0.10.0: both print 0.10.0; v0.10.0 is tagged on fecf43d and published with two archives, 129768 and 298781 bytes, each digest in the notes; the assets were re-downloaded and hash-compared, and the extracted Windows binary passed the gate 45 of 45 and the matrix 30 of 30 |
 
 Acceptance criteria for the port, and the evidence: the gate passes with the Rust binary in place of the script (36 of 36 on both builds); the CLI matrix matches 27 of 27 on both; the differential sweep compares exit code, printed names, payload decode, dimensions and page bytes over 91 payloads and 9 pages on Windows and Linux, with PNG bytes not compared across implementations because a different encoder produces a different valid file (QR-12 and NFR-07 cover what matters). Payloads where segno selects kanji mode are outside the dimension comparison, since the port writes them as UTF-8 bytes. The sweep ran before the Python line was deleted (run 43732908549); `tools/diff_python.py` stays for a re-run against a script taken from history, and the permanent checks are the gate, the matrix and symbol parity. The Linux binary also runs on Alpine x86_64 in that workflow.
 
@@ -213,6 +213,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 0.10.0 | P6: terminal display by default, save mode behind `--save` and the file options |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
+| Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
 
 Port increments, each closing at Gate 2:
 
