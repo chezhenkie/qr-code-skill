@@ -5,7 +5,7 @@ The generator is a native binary: a Windows console executable and a statically 
 
 ## Flow
 
-[<img src="docs/app-flow.png" width="360" alt="Flow page with the display path and the disk path">](https://chezhenkie.github.io/qr-code-skill/)
+[<img src="docs/app-flow-dark.png" width="144" alt="Dark flow page with the display path and the disk path">](https://chezhenkie.github.io/qr-code-skill/)
 
 The [flow page](https://chezhenkie.github.io/qr-code-skill/) shows both output paths, display only or files on disk, with light, dark and print modes.
 
