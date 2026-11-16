@@ -11,6 +11,7 @@ Usage:
   python tools/argv_matrix.py --target PATH           check another binary
   python tools/argv_matrix.py --freeze                rewrite the fixture from the shipped binary
   python tools/argv_matrix.py --freeze --target PATH  rewrite it from another binary
+  python tools/argv_matrix.py --check-manifest PATH   compare Cargo.toml with the fixture stamp
 """
 import atexit
 import json
@@ -81,6 +82,9 @@ CASES = [
     {"id": "terminal-border", "argv": ["x", "--border", "0"]},
     {"id": "save-default", "argv": ["x", "--save"]},
     {"id": "ambiguous-s", "argv": ["x", "--s"]},
+    {"id": "version", "argv": ["--version"]},
+    {"id": "page-clash", "argv": ["x", "-o", "clash.html", "--html"]},
+    {"id": "title-without-html", "argv": ["x", "--title", "t"]},
 ]
 
 
@@ -120,7 +124,10 @@ def verify(prefix, expect, quiet=False):
     bad = []
     for case in CASES:
         got = run_case(case, prefix)
-        want = expect[case["id"]]
+        want = expect.get(case["id"])
+        if want is None:
+            bad.append((case["id"], {"rc": "missing", "stdout": "", "stderr": ""}, got, "fixture case missing"))
+            continue
         if case.get("stdout_flat"):
             stdout_ok = flatten(got["stdout"]) == flatten(want["stdout"])
         else:
@@ -154,7 +161,31 @@ def freeze(prefix):
     print(f"frozen {len(CASES)} cases to {os.path.relpath(FIXTURE, REPO)}")
 
 
+def manifest_version(path):
+    section = None
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line.startswith("[") and line.endswith("]"):
+                section = line
+            elif section == "[package]" and line.startswith("version") and "=" in line:
+                return line.split("=", 1)[1].strip().strip('"')
+    return None
+
+
+def check_manifest(path):
+    version = manifest_version(path)
+    with open(FIXTURE, encoding="utf-8") as fh:
+        stamp = json.load(fh)["reference"]["program"]
+    ok = version is not None and version == stamp
+    print(("PASS " if ok else "FAIL ") + f"version tie manifest={version} fixture={stamp}")
+    return 0 if ok else 1
+
+
 def main(argv):
+    argv = list(argv)
+    if "--check-manifest" in argv:
+        return check_manifest(argv[argv.index("--check-manifest") + 1])
     target = default_target()
     if "--target" in argv:
         target = os.path.abspath(argv[argv.index("--target") + 1])

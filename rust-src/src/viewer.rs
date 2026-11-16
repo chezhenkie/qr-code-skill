@@ -1,9 +1,11 @@
 //! Viewer page written next to a PNG, for scanning from a screen.
 
-/// Render the page. Title and image name are escaped; the payload never reaches it.
+/// Render the page. The title is HTML-escaped; the image name is
+/// percent-encoded for the src attribute and then escaped. The payload never
+/// reaches it.
 pub fn render(title: &str, png_name: &str) -> String {
     let title = escape(title);
-    let png = escape(png_name);
+    let png = escape(&url_encode(png_name));
     format!(
         concat!(
             "<!doctype html>\n",
@@ -45,6 +47,21 @@ fn escape(text: &str) -> String {
     out
 }
 
+/// Percent-encode a file name for the src attribute. HTML escaping is not
+/// URL escaping: # ends the path, ? starts a query and % starts an escape.
+fn url_encode(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    for &byte in name.as_bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char)
+            }
+            _ => out.push_str(&format!("%{:02X}", byte)),
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,6 +77,14 @@ mod tests {
         let page = render("<b>&\"x\"</b>", "a&b.png");
         let escaped = "&lt;b&gt;&amp;&quot;x&quot;&lt;/b&gt;";
         assert_eq!(page.matches(escaped).count(), 2);
-        assert!(page.contains("src=\"a&amp;b.png\""));
+        assert!(page.contains("src=\"a%26b.png\""));
+    }
+
+    #[test]
+    fn the_image_name_is_url_encoded() {
+        let page = render("t", "a#b?.png");
+        assert!(page.contains("src=\"a%23b%3F.png\""), "{}", page);
+        let page = render("t", "caf\u{e9} 1.png");
+        assert!(page.contains("src=\"caf%C3%A9%201.png\""), "{}", page);
     }
 }

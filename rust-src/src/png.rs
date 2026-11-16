@@ -33,9 +33,9 @@ fn probe_reader<R: Read + Seek>(reader: &mut R) -> io::Result<Probe> {
         reader.seek(SeekFrom::Start(length - 12))?;
         let mut tail = [0u8; 12];
         let tail_len = read_full(reader, &mut tail)?;
-        iend = tail_len == 12 && &tail[4..8] == &b"IEND"[..];
+        iend = tail_len == 12 && tail[4..8] == b"IEND"[..];
     }
-    let size = if head_len < 24 || head[..8] != SIGNATURE[..] || &head[12..16] != &b"IHDR"[..] {
+    let size = if head_len < 24 || head[..8] != SIGNATURE[..] || head[12..16] != b"IHDR"[..] {
         None
     } else {
         Some((be_u32(&head[16..20]), be_u32(&head[20..24])))
@@ -109,10 +109,7 @@ pub fn write_png<W: Write>(out: &mut W, code: &QrCode, scale: u32, border: u32) 
                 && module_col >= border
                 && module_col < modules + border;
             let dark = inside
-                && code.get_module(
-                    (module_col - border) as i32,
-                    (module_row - border) as i32,
-                );
+                && code.get_module((module_col - border) as i32, (module_row - border) as i32);
             let pixel = if dark { 0 } else { 1 };
             for _ in 0..scale {
                 acc = (acc << 1) | pixel;

@@ -246,6 +246,38 @@ with open(art("latin1.bin"), "wb") as fh:
 code, out, err = run(["-f", "latin1.bin", "-o", "latin1.png"])
 check("non utf8 file is one FAIL read line", code == 1 and out == "" and err.startswith("FAIL read") and "Traceback" not in err, f"{code} {err[:90]}")
 
+code, out, err = run(["x", "-o", "clash.html", "--html"])
+check(
+    "page equal to the png is refused",
+    code == 2 and "page path equals the PNG path" in err and out == "" and not os.path.exists(art("clash.html")),
+    f"{code} {out!r} {err[:90]}",
+)
+
+code, out, err = run(["x", "-o", "a#b.png", "--html"])
+with open(art("a#b.html"), encoding="utf-8") as fh:
+    hash_page = fh.read()
+check(
+    "page encodes a # in the image name",
+    code == 0 and 'src="a%23b.png"' in hash_page and os.path.exists(art("a#b.png")),
+    f"{code} {hash_page[:90]}",
+)
+
+code, out, err = run(["x", "--title", "t"])
+check(
+    "title without html is refused",
+    code == 2 and "--title requires --html" in err and out == "",
+    f"{code} {out!r} {err[-90:]}",
+)
+
+with open(art("huge.txt"), "wb") as fh:
+    fh.write(b"a" * (1024 * 1024 + 1))
+code, out, err = run(["-f", "huge.txt", "-o", "huge-bound.png"])
+check(
+    "rejects an input file above 1 MiB",
+    code == 1 and err.startswith("FAIL read") and "1 MiB" in err and not os.path.exists(art("huge-bound.png")),
+    f"{code} {err[:90]}",
+)
+
 with open(art("blocker"), "w", encoding="utf-8") as fh:
     fh.write("x")
 code, out, err = run(["x", "-o", os.path.join("blocker", "hidden.png")])

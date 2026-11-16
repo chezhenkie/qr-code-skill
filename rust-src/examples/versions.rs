@@ -15,7 +15,7 @@ fn hex_value(byte: u8) -> u8 {
 
 fn unhex(line: &str) -> Vec<u8> {
     let bytes = line.as_bytes();
-    assert!(bytes.len() % 2 == 0, "odd hex length");
+    assert!(bytes.len().is_multiple_of(2), "odd hex length");
     (0..bytes.len() / 2)
         .map(|i| (hex_value(bytes[2 * i]) << 4) | hex_value(bytes[2 * i + 1]))
         .collect()
@@ -33,7 +33,9 @@ fn segment(text: &str) -> QrSegment {
 
 fn main() {
     let mut input = String::new();
-    std::io::stdin().read_to_string(&mut input).expect("read stdin");
+    std::io::stdin()
+        .read_to_string(&mut input)
+        .expect("read stdin");
     for line in input.lines().map(str::trim).filter(|line| !line.is_empty()) {
         let text = String::from_utf8(unhex(line)).expect("utf-8");
         let segs = [segment(&text)];

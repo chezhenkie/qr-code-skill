@@ -17,14 +17,14 @@ fn main() -> ExitCode {
     let prog = util::prog_name();
     let argv = util::args();
     match cli::parse(&argv) {
-        cli::Outcome::Help => {
-            print!("{}", cli::help(&prog));
-            ExitCode::SUCCESS
-        }
-        cli::Outcome::Version => {
-            println!("{}", cli::VERSION);
-            ExitCode::SUCCESS
-        }
+        cli::Outcome::Help => match write_stdout(&cli::help(&prog)) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(err) => ExitCode::from(fail("write", "stdout", &err)),
+        },
+        cli::Outcome::Version => match write_stdout(&format!("{}\n", cli::VERSION)) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(err) => ExitCode::from(fail("write", "stdout", &err)),
+        },
         cli::Outcome::Usage(message) => {
             eprint!("{}", cli::error(&prog, &message));
             ExitCode::from(2)
@@ -63,22 +63,21 @@ fn run(args: cli::Args, prog: &str) -> u8 {
             Err(code) => return code,
         };
         let painted = term::render(&code, border);
-        let mut stdout = std::io::stdout();
-        let mut result = stdout.write_all(painted.as_bytes());
-        if result.is_ok() {
-            result = stdout.flush();
-        }
-        return match result {
+        return match write_stdout(&painted) {
             Ok(()) => 0,
             Err(err) => fail("write", "stdout", &err),
         };
     }
 
-    let out = util::absolute(&out);
-    let page = if html {
-        Some(util::page_path(&out))
-    } else {
-        None
+    let (out, page) = match util::output_paths(&out, html) {
+        Ok(pair) => pair,
+        Err(clash) => {
+            eprint!(
+                "{}",
+                cli::error(prog, &format!("page path equals the PNG path: {}", clash))
+            );
+            return 2;
+        }
     };
 
     let code = match encode_or_fail(&data) {
@@ -134,11 +133,23 @@ fn run(args: cli::Args, prog: &str) -> u8 {
         }
     }
 
-    println!("{}", out);
-    if let Some(page) = page {
-        println!("{}", page);
+    let mut printed = write_stdout(&format!("{}\n", out));
+    if printed.is_ok() {
+        if let Some(page) = &page {
+            printed = write_stdout(&format!("{}\n", page));
+        }
+    }
+    if let Err(err) = printed {
+        return fail("write", "stdout", &err);
     }
     0
+}
+
+/// One checked write to stdout: a closed pipe is a FAIL line, not a panic.
+fn write_stdout(text: &str) -> std::io::Result<()> {
+    let mut stdout = std::io::stdout();
+    stdout.write_all(text.as_bytes())?;
+    stdout.flush()
 }
 
 fn encode_or_fail(data: &str) -> Result<QrCode, u8> {

@@ -2,8 +2,13 @@
 
 use std::env;
 use std::fs;
-use std::io;
+use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
+
+/// The largest input file in bytes. Far above the level-M payload maximum,
+/// so any payload that could fit passes; the bound only stops a special file
+/// or an accidental huge read.
+pub const MAX_INPUT: u64 = 1024 * 1024;
 
 /// The program name argparse would print in usage lines: the base name of argv[0].
 pub fn prog_name() -> String {
@@ -24,8 +29,17 @@ pub fn args() -> Vec<String> {
         .collect()
 }
 
-/// The absolute form of a path, with `.` and `..` resolved lexically, like os.path.abspath.
+/// The absolute form of a path. The OS resolves it where it can, which is
+/// what a Windows drive-relative name such as C:drive.png needs.
 pub fn absolute(path: &str) -> String {
+    if let Ok(resolved) = std::path::absolute(path) {
+        return resolved.to_string_lossy().into_owned();
+    }
+    lexical_absolute(path)
+}
+
+/// Component walk used when the OS refuses the path, as for an empty name.
+fn lexical_absolute(path: &str) -> String {
     let given = Path::new(path);
     let mut out = if given.is_absolute() {
         PathBuf::new()
@@ -44,6 +58,29 @@ pub fn absolute(path: &str) -> String {
         }
     }
     out.to_string_lossy().into_owned()
+}
+
+/// The absolute PNG path and, with a page, the page path. A page that lands
+/// on the PNG itself is refused: it would truncate the image just written.
+pub fn output_paths(out: &str, html: bool) -> Result<(String, Option<String>), String> {
+    let png = absolute(out);
+    if !html {
+        return Ok((png, None));
+    }
+    let page = page_path(&png);
+    if same_file(&png, &page) {
+        return Err(png);
+    }
+    Ok((png, Some(page)))
+}
+
+/// Whether two names land on the same file under this platform's rule.
+fn same_file(a: &str, b: &str) -> bool {
+    if cfg!(any(windows, target_os = "macos")) {
+        a.to_lowercase() == b.to_lowercase()
+    } else {
+        a == b
+    }
 }
 
 /// The page path for a PNG path: the same name with the extension replaced by .html.
@@ -76,7 +113,7 @@ fn split_extension(path: &str) -> (&str, &str) {
 
 fn last_separator(path: &str) -> Option<usize> {
     if cfg!(windows) {
-        path.rfind(|c| c == '/' || c == '\\')
+        path.rfind(['/', '\\'])
     } else {
         path.rfind('/')
     }
@@ -84,7 +121,15 @@ fn last_separator(path: &str) -> Option<usize> {
 
 /// Read a file as UTF-8 with line endings kept, then strip CPython whitespace.
 pub fn read_stripped(path: &str) -> io::Result<String> {
-    let bytes = fs::read(path)?;
+    let mut reader = fs::File::open(path)?.take(MAX_INPUT + 1);
+    let mut bytes = Vec::new();
+    reader.read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > MAX_INPUT {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "file larger than 1 MiB",
+        ));
+    }
     let text = String::from_utf8(bytes).map_err(|err| {
         io::Error::new(
             io::ErrorKind::InvalidData,
@@ -142,5 +187,35 @@ mod tests {
     fn base_name_is_the_last_component() {
         assert_eq!(base_name("a/b/qr.png"), "qr.png");
         assert_eq!(base_name("/qr.png"), "qr.png");
+    }
+
+    #[test]
+    fn output_paths_pair_the_page_and_refuse_a_clash() {
+        let (png, page) = output_paths("out.png", true).expect("a page");
+        assert!(png.ends_with("out.png"), "{}", png);
+        let want = page_path(&png);
+        assert_eq!(page.as_deref(), Some(want.as_str()));
+        assert!(output_paths("out.html", true).is_err());
+        assert!(output_paths("out.html", false).is_ok());
+    }
+
+    #[cfg(any(windows, target_os = "macos"))]
+    #[test]
+    fn a_page_clash_ignores_case_on_this_platform() {
+        assert!(output_paths("OUT.HTML", true).is_err());
+    }
+
+    #[test]
+    fn absolute_returns_an_os_resolved_path() {
+        let got = absolute("sub/../x.png");
+        assert!(Path::new(&got).is_absolute(), "{}", got);
+        assert!(got.ends_with("x.png"), "{}", got);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_drive_relative_output_resolves_to_an_absolute_path() {
+        let got = absolute("C:drive.png");
+        assert!(Path::new(&got).is_absolute(), "{}", got);
     }
 }

@@ -1,0 +1,7 @@
+# The Windows binaries carry their C runtime, so a folder copy needs no
+# redistributable and no DLL beside the exe.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

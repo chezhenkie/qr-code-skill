@@ -55,10 +55,7 @@ impl Opt {
     }
 
     fn takes_value(self) -> bool {
-        !matches!(
-            self,
-            Opt::Help | Opt::Version | Opt::Html | Opt::Save
-        )
+        !matches!(self, Opt::Help | Opt::Version | Opt::Html | Opt::Save)
     }
 }
 
@@ -179,12 +176,10 @@ fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched
             .collect();
         match hits.len() {
             0 => return Ok(Matched::Unknown(token.to_string())),
-            1 => {
-                match LONG_OPTIONS.iter().find(|(long, _)| *long == hits[0]) {
-                    Some((_, opt)) => *opt,
-                    None => return Ok(Matched::Unknown(token.to_string())),
-                }
-            }
+            1 => match LONG_OPTIONS.iter().find(|(long, _)| *long == hits[0]) {
+                Some((_, opt)) => *opt,
+                None => return Ok(Matched::Unknown(token.to_string())),
+            },
             _ => {
                 return Err(format!(
                     "ambiguous option: {} could match {}",
@@ -208,43 +203,36 @@ fn parse_long(token: &str, argv: &[String], index: &mut usize) -> Result<Matched
         Some(value) => Ok(Matched::Option(opt, Some(value))),
         None => match next_value(argv, index) {
             Some(value) => Ok(Matched::Option(opt, Some(value))),
-            None => Err(format!(
-                "argument {}: expected one argument",
-                opt.display()
-            )),
+            None => Err(format!("argument {}: expected one argument", opt.display())),
         },
     }
 }
 
 fn parse_short(token: &str, argv: &[String], index: &mut usize) -> Result<Matched, String> {
     let body = &token[1..];
-    for (pos, letter) in body.char_indices() {
-        let opt = match letter {
-            'h' => Opt::Help,
-            'f' => Opt::File,
-            'o' => Opt::Out,
-            _ => return Ok(Matched::Unknown(token.to_string())),
-        };
-        if !opt.takes_value() {
-            return Ok(Matched::Option(opt, None));
-        }
-        let rest = &body[pos + letter.len_utf8()..];
-        let value = if rest.is_empty() {
-            match next_value(argv, index) {
-                Some(value) => value,
-                None => {
-                    return Err(format!(
-                        "argument {}: expected one argument",
-                        opt.display()
-                    ))
-                }
-            }
-        } else {
-            rest.strip_prefix('=').unwrap_or(rest).to_string()
-        };
-        return Ok(Matched::Option(opt, Some(value)));
+    let mut chars = body.chars();
+    let Some(letter) = chars.next() else {
+        return Ok(Matched::Unknown(token.to_string()));
+    };
+    let opt = match letter {
+        'h' => Opt::Help,
+        'f' => Opt::File,
+        'o' => Opt::Out,
+        _ => return Ok(Matched::Unknown(token.to_string())),
+    };
+    if !opt.takes_value() {
+        return Ok(Matched::Option(opt, None));
     }
-    Ok(Matched::Unknown(token.to_string()))
+    let rest = chars.as_str();
+    let value = if rest.is_empty() {
+        match next_value(argv, index) {
+            Some(value) => value,
+            None => return Err(format!("argument {}: expected one argument", opt.display())),
+        }
+    } else {
+        rest.strip_prefix('=').unwrap_or(rest).to_string()
+    };
+    Ok(Matched::Option(opt, Some(value)))
 }
 
 fn next_value(argv: &[String], index: &mut usize) -> Option<String> {
@@ -332,7 +320,10 @@ fn finish(state: State) -> Outcome {
     if state.file.is_none() && state.text.is_none() {
         return Outcome::Usage("provide text or --file".to_string());
     }
-    let save = state.save || state.out_given || state.scale_given || state.title_given || state.html;
+    if state.title_given && !state.html {
+        return Outcome::Usage("--title requires --html".to_string());
+    }
+    let save = state.save || state.out_given || state.scale_given || state.html;
     Outcome::Run(Args {
         text: state.text,
         file: state.file,
@@ -400,7 +391,7 @@ pub fn help(prog: &str) -> String {
     text.push_str("  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n");
     text.push_str("  --border BORDER  quiet zone in modules 0-16 (default 4)\n");
     text.push_str("  --html           write a viewer page next to the PNG; implies --save\n");
-    text.push_str("  --title TITLE    viewer page title; implies --save\n");
+    text.push_str("  --title TITLE    viewer page title; requires --html\n");
     text.push_str("  --save           write the PNG instead of printing to the terminal\n");
     text.push_str("  --version        show program's version number and exit\n");
     text
@@ -476,7 +467,10 @@ mod tests {
 
     #[test]
     fn unknown_options_are_deferred_to_extras() {
-        assert_eq!(usage_message(&["x", "--bogus"]), "unrecognized arguments: --bogus");
+        assert_eq!(
+            usage_message(&["x", "--bogus"]),
+            "unrecognized arguments: --bogus"
+        );
         assert_eq!(usage_message(&["x", "y"]), "unrecognized arguments: y");
         assert_eq!(usage_message(&["-xh"]), "unrecognized arguments: -xh");
     }
@@ -499,8 +493,14 @@ mod tests {
             usage_message(&["x", "--scale", "abc"]),
             "argument --scale: invalid int value: 'abc'"
         );
-        assert_eq!(usage_message(&["x", "--scale", "0"]), "--scale must be 1-100");
-        assert_eq!(usage_message(&["x", "--border", "-1"]), "--border must be 0-16");
+        assert_eq!(
+            usage_message(&["x", "--scale", "0"]),
+            "--scale must be 1-100"
+        );
+        assert_eq!(
+            usage_message(&["x", "--border", "-1"]),
+            "--border must be 0-16"
+        );
     }
 
     #[test]
@@ -522,13 +522,19 @@ mod tests {
             usage_message(&["x", "-f", "secret.txt"]),
             "give text or --file, not both"
         );
-        assert_eq!(usage_message(&["x", "--border", "17"]), "--border must be 0-16");
+        assert_eq!(
+            usage_message(&["x", "--border", "17"]),
+            "--border must be 0-16"
+        );
     }
 
     #[test]
     fn help_flat_matches_the_frozen_fixture() {
-        let flat = help("make-qr.py").split_whitespace().collect::<Vec<_>>().join(" ");
-        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] Generate an offline QR code, printed to the terminal or saved as a PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT save the PNG at this path; implies --save --scale SCALE pixels per module 1-100 (default 10); implies --save --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG; implies --save --title TITLE viewer page title; implies --save --save write the PNG instead of printing to the terminal --version show program's version number and exit";
+        let flat = help("make-qr.py")
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        let want = "usage: make-qr.py [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [--version] [text] Generate an offline QR code, printed to the terminal or saved as a PNG. positional arguments: text text to encode; omit when using --file options: -h, --help show this help message and exit -f, --file FILE read the text from a file, stripped -o, --out OUT save the PNG at this path; implies --save --scale SCALE pixels per module 1-100 (default 10); implies --save --border BORDER quiet zone in modules 0-16 (default 4) --html write a viewer page next to the PNG; implies --save --title TITLE viewer page title; requires --html --save write the PNG instead of printing to the terminal --version show program's version number and exit";
         assert_eq!(flat, want);
     }
 
@@ -552,7 +558,6 @@ mod tests {
             vec!["x", "--out=a.png"],
             vec!["x", "--scale", "12"],
             vec!["x", "--html"],
-            vec!["x", "--title", "t"],
         ] {
             match parse(&argv(&items)) {
                 Outcome::Run(args) => assert!(args.save, "{:?}", items),
@@ -563,6 +568,21 @@ mod tests {
             Outcome::Run(args) => assert!(!args.save),
             other => panic!("expected a run, got {:?}", other),
         }
+        match parse(&argv(&["x", "--title", "t", "--html"])) {
+            Outcome::Run(args) => {
+                assert!(args.save);
+                assert_eq!(args.title, "t");
+            }
+            other => panic!("expected a run, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn a_title_needs_a_page() {
+        assert_eq!(
+            usage_message(&["x", "--title", "t"]),
+            "--title requires --html"
+        );
     }
 
     #[test]

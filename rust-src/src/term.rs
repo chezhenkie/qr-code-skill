@@ -18,7 +18,10 @@ pub fn render(code: &QrCode, border: u32) -> String {
     let border = border as i32;
     let span = code.size() + 2 * border;
     let rows = (span + 1) / 2;
-    let mut out = String::with_capacity(span as usize * rows as usize + rows as usize * 16);
+    // A dense symbol paints a three-byte glyph in every cell.
+    let capacity =
+        span as usize * rows as usize * 3 + rows as usize * (INK.len() + RESET.len() + 1);
+    let mut out = String::with_capacity(capacity);
     let mut y = -border;
     while y < -border + span {
         out.push_str(INK);
@@ -99,7 +102,10 @@ mod tests {
         }
         for y in 0..span {
             for x in 0..span {
-                let inside = x >= border && y >= border && x < border + code.size() && y < border + code.size();
+                let inside = x >= border
+                    && y >= border
+                    && x < border + code.size()
+                    && y < border + code.size();
                 let want = inside && code.get_module(x - border, y - border);
                 assert_eq!(grid[y as usize][x as usize], want, "module ({}, {})", x, y);
             }
