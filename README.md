@@ -1,6 +1,7 @@
 # QR code
 
-An agent skill that turns short text or a UTF-8 file into a scannable QR code. By default the code is printed to the terminal and nothing is written to disk; `--save` writes a PNG, with an optional viewer page sized for scanning from a phone screen.
+An agent skill that turns short text or a UTF-8 file into a scannable QR code. By default the code is printed to the terminal: nothing is written to disk, no PNG, page, temporary file, cache, log or output directory is created, and the run leaves nothing to delete. `--save` writes a PNG, with an optional viewer page sized for scanning from a phone screen.
+
 The generator is a native binary: Windows and Linux builds for x86_64 and ARM64, and a macOS ARM64 build, ship in the repository, so the host needs no interpreter, package manager or network access. Error correction is fixed at level M, every symbol is a regular QR code, and the viewer page never contains the encoded text.
 
 ## Flow
