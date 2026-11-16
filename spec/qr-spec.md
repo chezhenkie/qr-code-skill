@@ -71,7 +71,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
 | NFR-10 | The Windows and macOS binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.1.0 artifacts: 249856 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 656984 for `qr`, 715912 for `qr-arm64`, 535888 for `qr-macos-arm64`. |
-| NFR-11 | The build uses one source tree and one version for all four binaries, with no per-platform source differences. |
+| NFR-11 | The build uses one source tree and one version for all five binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
 ## 4. Architecture
@@ -126,7 +126,7 @@ Files: in save mode the PNG is the only required output and the page is optional
 | D-05 | The built binaries are committed under `bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
-Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. 1.0.0 marks the stable install model: four native binaries in one folder, one command line, no planned breaking change.
+Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. 1.0.0 marks the stable install model: native binaries for every shipped platform in one folder, one command line, no planned breaking change.
 
 ## 6. Functionality and states
 
