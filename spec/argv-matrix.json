@@ -2,28 +2,28 @@
   "cases": {
     "ambiguous-h": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: ambiguous option: --h could match --help, --html",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: ambiguous option: --h could match --help, --html",
       "stdout": ""
     },
-    "ambiguous-t": {
+    "ambiguous-s": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: ambiguous option: --t could match --title, --term",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: ambiguous option: --s could match --scale, --save",
       "stdout": ""
     },
     "bad-int": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: argument --scale: invalid int value: 'abc'",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument --scale: invalid int value: 'abc'",
       "stdout": ""
     },
     "dash-text": {
       "rc": 0,
       "stderr": "",
-      "stdout": "<dir>/qr.png\n"
+      "stdout": "\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588   \u2588 \u2588 \u2588\u2580\u2580\u2580\u2580\u2580\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2588\u2588\u2580\u2588\u2588 \u2588 \u2588\u2588\u2588 \u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2588\u2580 \u2584\u2580 \u2588 \u2580\u2580\u2580 \u2588    \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2588\u2584\u2588 \u2580 \u2580\u2580\u2580\u2580\u2580\u2580\u2580    \u001b[0m\n\u001b[30;107m    \u2580 \u2580\u2580\u2588\u2580\u2580\u2584  \u2584\u2588\u2584\u2584\u2588\u2580\u2580\u2588\u2580      \u001b[0m\n\u001b[30;107m    \u2580\u2588\u2580\u2584\u2580\u2580\u2580 \u2580\u2580\u2584\u2584\u2588\u2584\u2588\u2580 \u2584  \u2584    \u001b[0m\n\u001b[30;107m     \u2580\u2580 \u2580 \u2580 \u2584\u2588\u2580 \u2588  \u2588  \u2588\u2584     \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2584\u2580\u2580\u2580 \u2580 \u2584\u2588\u2580\u2588\u2580\u2580    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2588\u2580\u2580\u2588\u2584\u2588\u2584 \u2580\u2588\u2580      \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2580\u2588\u2580\u2584\u2588\u2584\u2588\u2580 \u2584  \u2584    \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2580   \u2580  \u2580  \u2580      \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n"
     },
     "double-dash": {
       "rc": 0,
       "stderr": "",
-      "stdout": "<dir>/qr.png\n"
+      "stdout": "\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588  \u2588\u2580\u2580  \u2588\u2580\u2580\u2580\u2580\u2580\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2588 \u2580\u2584  \u2588 \u2588\u2588\u2588 \u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2588\u2580\u2588\u2584\u2580 \u2588 \u2580\u2580\u2580 \u2588    \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2588\u2584\u2588 \u2580 \u2580\u2580\u2580\u2580\u2580\u2580\u2580    \u001b[0m\n\u001b[30;107m    \u2588\u2584\u2580\u2580\u2580\u2588\u2580 \u2584\u2584\u2580\u2588\u2584\u2584\u2588\u2588\u2580\u2588\u2580 \u2584    \u001b[0m\n\u001b[30;107m      \u2584\u2584\u2584 \u2580\u2580\u2580\u2588\u2584\u2584\u2588\u2584\u2588\u2580 \u2588\u2588\u2584     \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2584\u2588\u2580 \u2588  \u2584\u2584\u2580\u2584\u2580\u2588    \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2584\u2588\u2588\u2580 \u2580 \u2584 \u2588\u2584\u2584\u2584    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2588\u2588\u2580\u2588\u2584\u2588\u2584\u2584\u2588 \u2584\u2580     \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2580 \u2584\u2584\u2588\u2584\u2588  \u2588\u2584      \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2580\u2580\u2580 \u2580  \u2580   \u2580     \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n"
     },
     "dup-out": {
       "rc": 0,
@@ -32,7 +32,7 @@
     },
     "empty-text": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: empty input",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: empty input",
       "stdout": ""
     },
     "file-missing": {
@@ -48,17 +48,17 @@
     "help": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--term] [text]\n\nGenerate an offline QR code PNG or print it to the terminal.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n  --term           print the QR code to the terminal, write no file\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
     },
     "help-cluster": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--term] [text]\n\nGenerate an offline QR code PNG or print it to the terminal.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n  --term           print the QR code to the terminal, write no file\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
     },
     "help-long": {
       "rc": 0,
       "stderr": "",
-      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--term] [text]\n\nGenerate an offline QR code PNG or print it to the terminal.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    output PNG path\n  --scale SCALE    pixels per module 1-100 (default 10)\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG\n  --title TITLE    viewer page title\n  --term           print the QR code to the terminal, write no file\n"
+      "stdout": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html]\n              [--title TITLE] [--save] [text]\n\nGenerate an offline QR code, printed to the terminal or saved as a PNG.\n\npositional arguments:\n  text             text to encode; omit when using --file\n\noptions:\n  -h, --help       show this help message and exit\n  -f, --file FILE  read the text from a file, stripped\n  -o, --out OUT    save the PNG at this path; implies --save\n  --scale SCALE    pixels per module 1-100 (default 10); implies --save\n  --border BORDER  quiet zone in modules 0-16 (default 4)\n  --html           write a viewer page next to the PNG; implies --save\n  --title TITLE    viewer page title; implies --save\n  --save           write the PNG instead of printing to the terminal\n"
     },
     "html-title": {
       "rc": 0,
@@ -67,12 +67,12 @@
     },
     "missing-value-scale": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: argument --scale: expected one argument",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument --scale: expected one argument",
       "stdout": ""
     },
     "negative-border": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: --border must be 0-16",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --border must be 0-16",
       "stdout": ""
     },
     "nested-out": {
@@ -82,7 +82,7 @@
     },
     "no-args": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: provide text or --file",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: provide text or --file",
       "stdout": ""
     },
     "out-equals": {
@@ -92,7 +92,7 @@
     },
     "out-looks-like-option": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: argument -o/--out: expected one argument",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: argument -o/--out: expected one argument",
       "stdout": ""
     },
     "prefix-scale": {
@@ -102,43 +102,33 @@
     },
     "range-border": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: --border must be 0-16",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --border must be 0-16",
       "stdout": ""
     },
     "range-scale": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: --scale must be 1-100",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: --scale must be 1-100",
       "stdout": ""
+    },
+    "save-default": {
+      "rc": 0,
+      "stderr": "",
+      "stdout": "<dir>/qr.png\n"
     },
     "scale-equals": {
       "rc": 0,
       "stderr": "",
       "stdout": "<dir>/qr.png\n"
     },
-    "term-border-zero": {
+    "terminal-border": {
       "rc": 0,
       "stderr": "",
       "stdout": "\u001b[30;107m\u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584  \u2588\u2580\u2580\u2580\u2580\u2580\u2588\u001b[0m\n\u001b[30;107m\u2588 \u2588\u2588\u2588 \u2588 \u2584\u2580\u2584\u2588\u2580 \u2588 \u2588\u2588\u2588 \u2588\u001b[0m\n\u001b[30;107m\u2588 \u2580\u2580\u2580 \u2588 \u2588\u2588\u2588\u2584\u2580 \u2588 \u2580\u2580\u2580 \u2588\u001b[0m\n\u001b[30;107m\u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2588\u2584\u2580\u2584\u2588 \u2580\u2580\u2580\u2580\u2580\u2580\u2580\u001b[0m\n\u001b[30;107m\u2588\u2584\u2584\u2584\u2580 \u2580\u2580\u2580  \u2588\u2584\u2580\u2580\u2588\u2580\u2588 \u2584\u2588\u001b[0m\n\u001b[30;107m\u2588\u2584\u2584   \u2580\u2588\u2580\u2588 \u2580 \u2584\u2588\u2580\u2588\u2580\u2588  \u001b[0m\n\u001b[30;107m\u2580\u2580 \u2580\u2580 \u2580\u2580\u2588   \u2588\u2588\u2588   \u2588\u2580 \u001b[0m\n\u001b[30;107m\u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584\u2588\u2580 \u2584 \u2584 \u2588 \u001b[0m\n\u001b[30;107m\u2588 \u2588\u2588\u2588 \u2588 \u2580 \u2580\u2588\u2584 \u2580\u2588\u2580\u2588\u2580\u2588\u2588\u001b[0m\n\u001b[30;107m\u2588 \u2580\u2580\u2580 \u2588  \u2588\u2584\u2580 \u2584\u2588\u2580\u2588\u2580\u2588  \u001b[0m\n\u001b[30;107m\u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2580 \u2580 \u2580\u2580\u2580   \u2580 \u2580\u001b[0m\n"
     },
-    "term-html": {
-      "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: --term writes no file; drop --html",
-      "stdout": ""
-    },
-    "term-out": {
-      "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: --term writes no file; drop --out",
-      "stdout": ""
-    },
-    "term-text": {
-      "rc": 0,
-      "stderr": "",
-      "stdout": "\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584  \u2588\u2580\u2580\u2580\u2580\u2580\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2584\u2580\u2584\u2588\u2580 \u2588 \u2588\u2588\u2588 \u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2588\u2588\u2588\u2584\u2580 \u2588 \u2580\u2580\u2580 \u2588    \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2588\u2584\u2580\u2584\u2588 \u2580\u2580\u2580\u2580\u2580\u2580\u2580    \u001b[0m\n\u001b[30;107m    \u2588\u2584\u2584\u2584\u2580 \u2580\u2580\u2580  \u2588\u2584\u2580\u2580\u2588\u2580\u2588 \u2584\u2588    \u001b[0m\n\u001b[30;107m    \u2588\u2584\u2584   \u2580\u2588\u2580\u2588 \u2580 \u2584\u2588\u2580\u2588\u2580\u2588      \u001b[0m\n\u001b[30;107m    \u2580\u2580 \u2580\u2580 \u2580\u2580\u2588   \u2588\u2588\u2588   \u2588\u2580     \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584\u2588\u2580 \u2584 \u2584 \u2588     \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2580 \u2580\u2588\u2584 \u2580\u2588\u2580\u2588\u2580\u2588\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588  \u2588\u2584\u2580 \u2584\u2588\u2580\u2588\u2580\u2588      \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2580 \u2580 \u2580\u2580\u2580   \u2580 \u2580    \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n"
-    },
     "text-default": {
       "rc": 0,
       "stderr": "",
-      "stdout": "<dir>/qr.png\n"
+      "stdout": "\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584  \u2588\u2580\u2580\u2580\u2580\u2580\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2584\u2580\u2584\u2588\u2580 \u2588 \u2588\u2588\u2588 \u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588 \u2588\u2588\u2588\u2584\u2580 \u2588 \u2580\u2580\u2580 \u2588    \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2588\u2584\u2580\u2584\u2588 \u2580\u2580\u2580\u2580\u2580\u2580\u2580    \u001b[0m\n\u001b[30;107m    \u2588\u2584\u2584\u2584\u2580 \u2580\u2580\u2580  \u2588\u2584\u2580\u2580\u2588\u2580\u2588 \u2584\u2588    \u001b[0m\n\u001b[30;107m    \u2588\u2584\u2584   \u2580\u2588\u2580\u2588 \u2580 \u2584\u2588\u2580\u2588\u2580\u2588      \u001b[0m\n\u001b[30;107m    \u2580\u2580 \u2580\u2580 \u2580\u2580\u2588   \u2588\u2588\u2588   \u2588\u2580     \u001b[0m\n\u001b[30;107m    \u2588\u2580\u2580\u2580\u2580\u2580\u2588 \u2580\u2584 \u2584\u2588\u2580 \u2584 \u2584 \u2588     \u001b[0m\n\u001b[30;107m    \u2588 \u2588\u2588\u2588 \u2588 \u2580 \u2580\u2588\u2584 \u2580\u2588\u2580\u2588\u2580\u2588\u2588    \u001b[0m\n\u001b[30;107m    \u2588 \u2580\u2580\u2580 \u2588  \u2588\u2584\u2580 \u2584\u2588\u2580\u2588\u2580\u2588      \u001b[0m\n\u001b[30;107m    \u2580\u2580\u2580\u2580\u2580\u2580\u2580 \u2580 \u2580 \u2580\u2580\u2580   \u2580 \u2580    \u001b[0m\n\u001b[30;107m                             \u001b[0m\n\u001b[30;107m                             \u001b[0m\n"
     },
     "text-out": {
       "rc": 0,
@@ -147,22 +137,22 @@
     },
     "two-positionals": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: unrecognized arguments: y",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: y",
       "stdout": ""
     },
     "unknown-cluster": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: unrecognized arguments: -xh",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: -xh",
       "stdout": ""
     },
     "unknown-long": {
       "rc": 2,
-      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--term] [text] PROG: error: unrecognized arguments: --bogus",
+      "stderr": "usage: PROG [-h] [-f FILE] [-o OUT] [--scale SCALE] [--border BORDER] [--html] [--title TITLE] [--save] [text] PROG: error: unrecognized arguments: --bogus",
       "stdout": ""
     }
   },
   "reference": {
     "platform": "win32",
-    "program": "0.9.0"
+    "program": "0.10.0"
   }
 }
