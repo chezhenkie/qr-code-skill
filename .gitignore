@@ -2,5 +2,6 @@ tools/.artifacts/
 rust-src/target/
 temp/
 logs/
+releases/
 __pycache__/
 *.pyc
