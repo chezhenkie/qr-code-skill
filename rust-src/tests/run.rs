@@ -73,7 +73,11 @@ fn save_writes_one_file_and_prints_its_absolute_path() {
     assert_eq!(resolved, want);
     assert_eq!(scratch.names(), vec!["out.png".to_string()]);
     let bytes = fs::read(scratch.path("out.png")).expect("read the png");
-    assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"), "not a png: {} bytes", bytes.len());
+    assert!(
+        bytes.starts_with(b"\x89PNG\r\n\x1a\n"),
+        "not a png: {} bytes",
+        bytes.len()
+    );
 }
 
 #[test]
@@ -90,7 +94,11 @@ fn a_page_equal_to_the_png_is_refused() {
     let scratch = Scratch::new("page-clash");
     let output = scratch.run(&["x", "-o", "out.html", "--html"]);
     assert_eq!(output.status.code(), Some(2), "{}", stderr(&output));
-    assert!(stderr(&output).contains("page path equals the PNG path"), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("page path equals the PNG path"),
+        "{}",
+        stderr(&output)
+    );
     assert!(scratch.names().is_empty(), "{:?}", scratch.names());
 }
 
@@ -141,7 +149,11 @@ fn an_oversize_payload_creates_no_directory() {
     let payload = "x".repeat(3000);
     let output = scratch.run(&[payload.as_str(), "-o", "deep/out.png"]);
     assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
-    assert!(stderr(&output).starts_with("FAIL store:"), "{}", stderr(&output));
+    assert!(
+        stderr(&output).starts_with("FAIL store:"),
+        "{}",
+        stderr(&output)
+    );
     assert!(scratch.names().is_empty(), "{:?}", scratch.names());
 }
 
@@ -162,7 +174,10 @@ fn the_page_is_written_beside_the_png() {
         fs::canonicalize(scratch.path("out.html")).expect("resolve the page"),
     ];
     assert_eq!(resolved, want);
-    assert_eq!(scratch.names(), vec!["out.html".to_string(), "out.png".to_string()]);
+    assert_eq!(
+        scratch.names(),
+        vec!["out.html".to_string(), "out.png".to_string()]
+    );
     let page = fs::read_to_string(scratch.path("out.html")).expect("read the page");
     assert!(page.contains("src=\"out.png\""), "{}", page);
 }
