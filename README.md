@@ -3,6 +3,12 @@
 An agent skill that turns short text or a UTF-8 file into a scannable QR code. By default the code is printed to the terminal and nothing is written to disk; `--save` writes a PNG, with an optional viewer page sized for scanning from a phone screen.
 The generator is a native binary: a Windows console executable and a statically linked Linux x86_64 binary ship in the repository, so the host needs no interpreter, package manager or network access. Error correction is fixed at level M, every symbol is a regular QR code, and the viewer page never contains the encoded text.
 
+## Flow
+
+[<img src="docs/app-flow.png" width="360" alt="Flow page with the display path and the disk path">](https://chezhenkie.github.io/qr-code-skill/)
+
+The [flow page](https://chezhenkie.github.io/qr-code-skill/) shows both output paths, display only or files on disk, with light, dark and print modes.
+
 ## Samples
 
 Click a sample to open the full-size image.
