@@ -107,15 +107,14 @@ fn a_read_only_destination_is_refused_and_kept() {
     let scratch = Scratch::new("read-only");
     let path = scratch.path("out.png");
     fs::write(&path, b"old").expect("seed the destination");
-    let mut permissions = fs::metadata(&path).expect("read the mode").permissions();
-    permissions.set_readonly(true);
-    fs::set_permissions(&path, permissions).expect("make it read-only");
+    let original = fs::metadata(&path).expect("read the mode").permissions();
+    let mut readonly = original.clone();
+    readonly.set_readonly(true);
+    fs::set_permissions(&path, readonly).expect("make it read-only");
 
     let output = scratch.run(&["x", "-o", "out.png"]);
 
-    let mut permissions = fs::metadata(&path).expect("read the mode").permissions();
-    permissions.set_readonly(false);
-    fs::set_permissions(&path, permissions).expect("make it writable again");
+    fs::set_permissions(&path, original).expect("restore the mode");
 
     assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
     let err = stderr(&output);
