@@ -163,7 +163,7 @@ python tools/gate.py
 python tools/argv_matrix.py
 ```
 
-The gate runs 56 checks over the shipped binary: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, a truncated PNG, the largest image the options allow, a read-only destination and a name that is not valid Unicode, and the terminal rendering, which is rebuilt from the printed blocks into a bitmap, decoded, and checked for an empty working directory. The matrix compares 33 command-line cases with the frozen fixture.
+The gate runs 56 checks over the shipped binary, 55 on macOS, where the file system refuses a name that is not valid UTF-8: decode at level M, dimensions at two scales, the page contents, the strip boundaries, error paths, a truncated PNG, the largest image the options allow, a read-only destination and a name that is not valid Unicode, and the terminal rendering, which is rebuilt from the printed blocks into a bitmap, decoded, and checked for an empty working directory. The matrix compares 33 command-line cases with the frozen fixture.
 Both need Python 3; the gate also needs Pillow and zxing-cpp and exits 2 when they are missing. Both tools write their fixtures under `tools/.artifacts` and delete them on exit.
 
 CI runs the gate and the matrix on Windows and Linux for x86_64 and ARM64, and on macOS ARM64, checks the version tie, formatting and lints, builds the crate for all five targets, checks that both Linux binaries have no dynamic dependency, and runs them on `alpine:3.21`. No local Rust toolchain is needed.

@@ -14,7 +14,7 @@
 
 ### Changes
 
-* The gate has 56 checks.
+* The gate has 56 checks, 55 on macOS, where the file system refuses a name that is not valid UTF-8.
 
 ## 1.2.0
 

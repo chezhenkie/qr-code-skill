@@ -71,7 +71,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
-| NFR-10 | The Windows binaries link the C runtime statically, and the import table names no VCRUNTIME140, MSVCP140 or api-ms-win-crt-* entry, so neither Windows nor macOS needs a runtime redistributable. Size under 4 MB per binary. Measured on the 1.2.0 artifacts: 361472 bytes for `qr.exe`, 346112 for `qr-arm64.exe`, 665352 for `qr`, 716608 for `qr-arm64`, 555008 for `qr-macos-arm64`. |
+| NFR-10 | The Windows binaries link the C runtime statically, and the import table names no VCRUNTIME140, MSVCP140 or api-ms-win-crt-* entry, so neither Windows nor macOS needs a runtime redistributable. Size under 4 MB per binary. Measured on the 1.2.1 artifacts: 373760 bytes for `qr.exe`, 355840 for `qr-arm64.exe`, 675840 for `qr`, 719592 for `qr-arm64`, 556416 for `qr-macos-arm64`. |
 | NFR-11 | The build uses one source tree and one version for all five binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 
@@ -190,14 +190,14 @@ Recovery is always a corrected re-run; the tool holds no state that a failed run
 | QR-14 | gate stdout | `two paths png then html` |
 | QR-15 | gate page inspection and exit code | `viewer references png`, `viewer hides text`, `viewport tag present`, `page encodes a # in the image name`, `page equal to the png is refused` |
 | QR-16 | gate page inspection and exit code | `title escaped in page`, `title never encoded`, `title without html is refused` |
-| QR-17 | exit code asserted in every check | all 56 |
+| QR-17 | exit code asserted in every check | all 56 on Windows and Linux, 55 on macOS where the file system refuses a name that is not valid UTF-8 |
 | QR-18 | gate decode after a rewrite and after a refused read-only destination | `overwrite replaces the file`, `read-only output is refused`, `read-only output keeps the old image` |
 | QR-19 | gate exit code and one-line stderr | `missing file is one FAIL read line`, `non utf8 file is one FAIL read line`, `blocks output parent with FAIL write`, `blocks page with FAIL write`, `read-only output is refused` |
 | QR-20 | gate exit code and matrix help cases | `help exits 0`; the matrix compares the help text after whitespace collapse |
 | QR-21 | gate decode with stdin attached | `stdin is ignored` |
 | QR-22 | gate exit code and stdout; matrix version case; version tie job | `version prints one line`; the matrix case `version`; `version tie manifest=1.2.0 fixture=1.2.0` |
 | QR-23, QR-24, NFR-12 | gate terminal rebuild, directory listing and save default | `term exits 0 with no stderr`, `term writes nothing to disk`, `term decodes to the payload`, `term keeps a square white quiet zone`, `term border 0 gives a bare 21-module grid`, `term oversize writes nothing`, `save writes qr.png and prints the path`, `save writes a decodable PNG` |
-| QR-25 | gate run with a name that is not valid Unicode; unit tests on the path code | `a name that is not valid unicode is used exactly`; `a_non_utf8_path_value_survives_both_forms`, `a_page_path_keeps_a_non_utf8_name`, `an_unreadable_positional_or_title_is_a_usage_error` |
+| QR-25 | gate run with a name that is not valid Unicode on Windows and Linux; unit tests on the path code on every platform | `a name that is not valid unicode is used exactly` (macOS skips it: the file system refuses the name); `a_non_utf8_path_value_survives_both_forms`, `a_page_path_keeps_a_non_utf8_name`, `an_unreadable_positional_or_title_is_a_usage_error` |
 | QR-08, QR-12 at the range maximum | gate probe of the largest image | `scale 100 border 16 gives a 20900 pixel image`, `the largest image ends with IEND` |
 | NFR-01, NFR-02, NFR-07 | static inspection and repeat-run hash | no network code in the tree; one static binary with no runtime dependency; two runs of the same payload give the same PNG digest |
 | NFR-04, NFR-05, NFR-10 | measurement on the reference machine | 10.3 ms maximum, 0.97 MiB peak commit, 361472, 346112, 665352, 716608 and 555008 bytes |
@@ -224,7 +224,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 1.1.0 | macOS ARM64: aarch64-apple-darwin built on macos-latest, no Intel macOS binary |
 | Build, 1.1.1 | failure paths: over-capacity writes nothing before output directories, failed page write removes the partial page; 45 checks and 30 matrix cases |
 | Build, 1.2.0 | audit closure: static CRT on both Windows targets with an import check, page path equal to the PNG refused, checked stdout, 1 MiB input bound, version tie, percent-encoded page name, 49 checks and 33 matrix cases |
-| Build, 1.2.1 | audit follow-up: paths kept as operating-system strings, output written under a temporary name and renamed, read-only destinations refused, the largest image measured; 56 checks and 33 matrix cases |
+| Build, 1.2.1 | audit follow-up: paths kept as operating-system strings, output written under a temporary name and renamed, read-only destinations refused, the largest image measured; 56 checks (55 on macOS) and 33 matrix cases |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
 | Release, 0.10.1 | shipped 2026-11-16: v0.10.1 tagged on 7517fd1, two archives published, assets re-verified at the release page |

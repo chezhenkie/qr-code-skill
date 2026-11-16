@@ -163,11 +163,11 @@
     "version": {
       "rc": 0,
       "stderr": "",
-      "stdout": "1.2.0\n"
+      "stdout": "1.2.1\n"
     }
   },
   "reference": {
     "platform": "win32",
-    "program": "1.2.0"
+    "program": "1.2.1"
   }
 }

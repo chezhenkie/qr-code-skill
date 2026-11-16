@@ -319,14 +319,18 @@ check(
 
 exotic = "bad\ud800.txt" if os.name == "nt" else "bad\udcff.txt"
 exotic_out = "out\ud800.png" if os.name == "nt" else "out\udcff.png"
-with open(art(exotic), "wb") as fh:
-    fh.write(b"exotic")
-code, out, err = run(["-f", exotic, "-o", exotic_out])
-check(
-    "a name that is not valid unicode is used exactly",
-    code == 0 and decode(art(exotic_out)) == "exotic" and err == "",
-    f"{code} {err[:90]}",
-)
+if sys.platform == "darwin":
+    # APFS refuses a name that is not valid UTF-8, so the case cannot be created.
+    print("SKIP a name that is not valid unicode is used exactly :: the file system refuses the name")
+else:
+    with open(art(exotic), "wb") as fh:
+        fh.write(b"exotic")
+    code, out, err = run(["-f", exotic, "-o", exotic_out])
+    check(
+        "a name that is not valid unicode is used exactly",
+        code == 0 and decode(art(exotic_out)) == "exotic" and err == "",
+        f"{code} {err[:90]}",
+    )
 
 code, out, err = run(["x" * 2300, "-o", "extreme.png", "--scale", "100", "--border", "16"])
 size, complete = png_probe(art("extreme.png"))
