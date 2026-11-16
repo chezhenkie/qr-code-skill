@@ -70,7 +70,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | NFR-07 | The same payload and options produce byte-identical PNG output on the same platform. |
 | NFR-08 | The payload never reaches stdout, stderr, a log or a file name, and no telemetry is collected. |
 | NFR-09 | Both Linux binaries are statically linked and carry no dynamic loader dependency; they start on Alpine x86_64 and arm64 with no package installed. |
-| NFR-10 | The Windows and macOS binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.1.0 artifacts: 249856 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 656984 for `qr`, 715912 for `qr-arm64`, 535888 for `qr-macos-arm64`. |
+| NFR-10 | The Windows and macOS binaries start with no runtime redistributable. Size under 4 MB per binary. Measured on the 1.1.1 artifacts: 250368 bytes for `qr.exe`, 235008 for `qr-arm64.exe`, 657120 for `qr`, 716056 for `qr-arm64`, 536000 for `qr-macos-arm64`. |
 | NFR-11 | The build uses one source tree and one version for all five binaries, with no per-platform source differences. |
 | NFR-12 | A run with no output option performs no filesystem write. After a terminal run the working directory is unchanged, with no PNG, page, temp file, cache or log. |
 

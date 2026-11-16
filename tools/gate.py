@@ -187,8 +187,8 @@ check("rejects empty text", code == 2 and "empty input" in err, f"{code} {err[-6
 code, out, err = run([])
 check("rejects no source", code == 2 and "provide text or --file" in err, f"{code} {err[-60:]}")
 
-code, out, err = run(["x" * 3000, "-o", "huge.png"])
-check("rejects oversize", code == 1 and err.startswith("FAIL store") and not os.path.exists(art("huge.png")), f"{code} {err[:80]}")
+code, out, err = run(["x" * 3000, "-o", os.path.join("oversize", "deep", "huge.png")])
+check("rejects oversize", code == 1 and err.startswith("FAIL store") and not os.path.exists(art("oversize")), f"{code} {err[:80]}")
 
 code, out, err = run(["", "-f", "secret.txt", "-o", "emptyboth.png"])
 check("rejects empty text with file", code == 2 and "not both" in err, f"{code} {err[-60:]}")
