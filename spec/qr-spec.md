@@ -9,7 +9,7 @@
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
-| Related | agent-skill/SKILL.md, README.md, tools/gate.py, tools/argv_matrix.py, spec/argv-matrix.json, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
+| Related | agent-skill/SKILL.md, README.md, REQUIREMENTS.md, tools/gate.py, tools/argv_matrix.py, spec/argv-matrix.json, CHANGELOG.md, docs/specsheet-design-and-review-manual.md, docs/audit-process-manual.md, docs/changelog-build-and-release-manual.md, docs/python-to-rust-refactor-pitfalls.md |
 | Scope | the shipped skill, SKILL.md and the generator; the gate is verification, not product |
 
 ## 1. Problem and goals

@@ -31,6 +31,11 @@ Both samples come from `agent-skill/bin/qr.exe --save "https://example.com" -o d
 | `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
 | `docs/` | Process manuals and the sample images |
 | `CHANGELOG.md` | Version history |
+| `REQUIREMENTS.md` | Host, runtime, scanning and build requirements |
+
+## Requirements
+
+Any supported host runs the binary with no interpreter, package manager, network access or configuration file; the skill is a folder copy. The generator needs a writable path only when saving, and the terminal display needs a monospaced window wider than the symbol. Checking the repository needs Python 3.14 with Pillow, zxing-cpp and segno; the full list is in [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Install
 
