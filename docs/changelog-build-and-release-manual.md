@@ -50,6 +50,6 @@ Rules:
 - `# Changelog` once at the top; one bare `## X.Y.Z` chapter per version, newest at the top.
 - No dates under the headings. The git history carries when; the changelog carries what.
 - No owner names, no decision attributions, no run ids, no process narrative, no "this commit" markers. Those live in git history and the spec sheet.
-- Chapters carry what the person using the product gets: `### New features` and `### Fixes`. Platform differences get `####` subheads: All platforms, Windows, Linux, macOS, Linux (musl).
+- Chapters carry what the person using the product gets: `### New features`, `### Changes` and `### Fixes`. Platform differences get `####` subheads: All platforms, Windows, Linux, macOS, Linux (musl).
 - Terse bullets, one line each. Facts, not salesmanship.
 - The changelog ships inside the bundles: it must stay byte-equal to the repo tree, and it never references the release's own run ids or sizes.

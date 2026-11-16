@@ -80,13 +80,6 @@ fn run(args: cli::Args, prog: &str) -> u8 {
     } else {
         None
     };
-    if let Some(parent) = Path::new(&out).parent() {
-        if !parent.as_os_str().is_empty() {
-            if let Err(err) = fs::create_dir_all(parent) {
-                return fail("write", &out, &err);
-            }
-        }
-    }
 
     let code = match encode_or_fail(&data) {
         Ok(code) => code,
@@ -94,6 +87,14 @@ fn run(args: cli::Args, prog: &str) -> u8 {
     };
     let side = (code.size() as u64 + 2 * border as u64) * scale as u64;
     let side = side as u32;
+
+    if let Some(parent) = Path::new(&out).parent() {
+        if !parent.as_os_str().is_empty() {
+            if let Err(err) = fs::create_dir_all(parent) {
+                return fail("write", &out, &err);
+            }
+        }
+    }
 
     let write_png = || -> std::io::Result<()> {
         let file = fs::File::create(&out)?;
@@ -128,6 +129,7 @@ fn run(args: cli::Args, prog: &str) -> u8 {
             file.flush()
         };
         if let Err(err) = write_page() {
+            let _ = fs::remove_file(page);
             return fail("write", page, &err);
         }
     }

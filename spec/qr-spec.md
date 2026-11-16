@@ -4,8 +4,8 @@
 |---|---|
 | Title | qr: offline QR code generator skill |
 | Purpose | Pin observable behaviour of the skill, first for the Python line, then as the acceptance target for the Rust line that replaces it |
-| Status | under review |
-| Version | 1.1.0 |
+| Status | approved |
+| Version | 1.1.1 |
 | Owner | skill maintainer |
 | Stakeholders | agent operators who load the skill, reviewers of the port |
 | Approvers | owner, reviewer |
@@ -42,7 +42,7 @@ QR-22 applies to the 0.8.0 binary; the 0.7.1 Python line had no `--version` flag
 | QR-08 | `--scale` is an integer 1 to 100, default 10 pixels per module. It selects save mode, per QR-24. | exit 2, stderr `--scale must be 1-100` |
 | QR-09 | `--border` is an integer 0 to 16, default 4 quiet-zone modules. | exit 2, stderr `--border must be 0-16` |
 | QR-10 | Error correction is fixed at level M and is not selectable. Symbols are regular QR, never Micro QR. | no option exists |
-| QR-11 | A payload over the capacity of level M fails without leaving a file. | exit 1, stderr starts `FAIL store:` |
+| QR-11 | A payload over the capacity of level M fails without writing anything. | exit 1, stderr starts `FAIL store:` |
 | QR-12 | The PNG is square, side `(modules + 2 * border) * scale` pixels, and decodes back to the payload. | QR-11, QR-13 |
 | QR-13 | After writing, the PNG header dimensions are compared with the expected symbol size, and the file must end with an IEND chunk. | on a size mismatch the file is removed, exit 1, stderr `FAIL png size <got> expected <want>`; without IEND the file is removed, exit 1, stderr `FAIL png tail: missing IEND` |
 | QR-14 | In save mode, stdout carries only the absolute PNG path, then, with `--html`, the absolute page path on a second line. | no other stdout output in save mode |
@@ -110,6 +110,7 @@ Command line:
 | `--title` | string | default `qr code` | page only, never encoded; implies save |
 | `--save` | flag | off | writes the PNG instead of printing to the terminal |
 | `--version` | flag | off | prints the version, added by the port |
+| `-h`, `--help` | flag | off | prints usage on stdout and exits 0 |
 
 Streams: by default stdout carries the painted symbol and no path. In save mode stdout carries the absolute paths, one per line, and nothing else on success. stderr carries one line for a runtime failure, prefixed `FAIL`. Usage errors use the argparse-compatible text on stderr.
 
@@ -123,7 +124,7 @@ Files: in save mode the PNG is the only required output and the page is optional
 | D-02 | `bin/qr` and `bin/qr-arm64` are built for `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`, statically linked, so they run on Alpine with no runtime package. |
 | D-03 | The two Windows binaries use the console subsystem, so a shell waits for them and captures stdout, stderr and the exit code. No GUI subsystem, no detached console. |
 | D-04 | All five binaries are produced from one source tree and carry the same version, printed by `--version`. |
-| D-05 | The built binaries are committed under `agent-skill/bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, not in the tree. |
+| D-05 | The built binaries are committed under `agent-skill/bin/` in this repo, because an install is a folder copy. A rebuild replaces them; sizes and digests go in the release notes, and NFR-10 records the measured sizes. |
 | D-06 | The gate and its decoder dependencies are not shipped and are not needed on the target. |
 
 Breaking-change rule: flag names, defaults, ranges, message text, path derivation and exit codes are the contract. Removing a flag or narrowing a range is breaking; adding a flag with a default that preserves existing output is compatible. Replacing the shipped artefact from a script to a binary is breaking for installers, so the port releases as 0.8.0, one minor step above 0.7.0. 1.0.0 marks the stable install model: native binaries for every shipped platform in one folder, one command line, no planned breaking change.
@@ -135,14 +136,13 @@ Breaking-change rule: flag names, defaults, ranges, message text, path derivatio
 | Success, plain | valid payload, no `--html` | one absolute PNG path on stdout, exit 0 |
 | Success, page | valid payload, `--html` | PNG path then page path, exit 0 |
 | Success, terminal | valid payload, no output option | painted symbol on stdout, exit 0, no file written |
-| Success, page | valid payload, `--html` | PNG path then page path, exit 0 |
 | Version | `--version` | one version line on stdout, exit 0 |
 | Usage error | conflicting or missing source, out-of-range number, unknown option | argparse-compatible text on stderr, exit 2, nothing written |
-| Capacity failure | payload over level M capacity | one `FAIL store:` line on stderr, exit 1, no file |
+| Capacity failure | payload over level M capacity | one `FAIL store:` line on stderr, exit 1, nothing written |
 | Size mismatch | header dimensions differ from the symbol size, or the file has no IEND chunk | one `FAIL png size` or `FAIL png tail` line on stderr, file removed, exit 1 |
 | Filesystem failure | unwritable output path, unreadable or non-UTF-8 input | one `FAIL read` or `FAIL write` line on stderr, exit 1, no traceback |
 | Page failure | the PNG is written and the page path is blocked | one `FAIL write` line on stderr, exit 1, PNG kept, stdout empty |
-| Terminal write failure | stdout is closed or unwritable during `--term` | one `FAIL write: stdout` line on stderr, exit 1 |
+| Terminal write failure | stdout is closed or unwritable in the terminal display | one `FAIL write: stdout` line on stderr, exit 1 |
 
 Recovery is always a corrected re-run; the tool holds no state that a failed run can corrupt.
 
@@ -205,7 +205,7 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Phase | State |
 |---|---|
 | Define | closed 2026-11-15: problem, goals, non-goals, requirements |
-| Design | under review: architecture, interfaces, distribution, states, security, validation map |
+| Design | closed: architecture, interfaces, distribution, states, security, validation map |
 | Build, Python 0.7.0 | shipped and gated: 15 of 15 |
 | Build, Python 0.7.1 | gated: 35 of 35 |
 | Build, port increments | P1 to P4 closed |
@@ -214,8 +214,8 @@ Acceptance criteria for the port, and the evidence: the gate passes with the Rus
 | Build, 0.10.1 | help lists `--version`; unit tests cover the post-write size and tail verdict |
 | Build, 1.0.0 | ARM64 on both systems: aarch64 Linux musl and Windows ARM64, built on the arm64 runners; four binaries at 1.0.0 |
 | Build, 1.1.0 | macOS ARM64: aarch64-apple-darwin built on macos-latest, no Intel macOS binary |
+| Build, 1.1.1 | failure paths: over-capacity writes nothing before output directories, failed page write removes the partial page; 45 checks and 30 matrix cases |
 | Release, 0.8.0 | shipped 2026-11-15: v0.8.0 tagged on b976acf, two archives published, assets re-verified at the release page |
-| Release, 0.9.0 | shipped 2026-11-15: v0.9.0 tagged on 7994592, two archives published, assets re-verified at the release page |
 | Release, 0.10.0 | shipped 2026-11-16: v0.10.0 tagged on fecf43d, two archives published, assets re-verified at the release page |
 | Release, 0.10.1 | shipped 2026-11-16: v0.10.1 tagged on 7517fd1, two archives published, assets re-verified at the release page |
 | Release, 1.0.0 | shipped 2026-11-16: v1.0.0 tagged on a9be694, four archives published, assets re-verified at the release page |

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1
+
+### Fixes
+
+#### All platforms
+
+* An over-capacity payload fails before any output directory is created.
+* A failed viewer-page write removes the partial page and keeps the PNG.
+
 ## 1.1.0
 
 ### New features

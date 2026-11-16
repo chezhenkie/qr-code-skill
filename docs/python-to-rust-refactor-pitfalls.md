@@ -142,7 +142,7 @@ Replicate the original's decode chain and error-handler grouping; generate inval
 
 - argparse behavior is part of the contract when a Rust binary replaces a Python CLI: unknown options are deferred (so "the following arguments are required: input" fires before "unrecognized arguments"), and -h wins inside short clusters (-hx prints help, -xh does not).
 - Long options match by unambiguous prefix with an "ambiguous option: --num could match --numbered, --numbered-only" error; --out=value and --out value differ (the latter refuses a token that looks like another option), and every usage error exits 2 with the message on stderr.
-- Probe it instead of reading argparse internals: run the original with an edge-case argv matrix and record rc/stdout/stderr (used here: 28 cases incl. ['--out','--numbered'], ['--num','x.srt'], ['--numbered=x','x.srt'], ['-hx'], ['--bogus','-h']).
+- Probe it instead of reading argparse internals: run the original with an edge-case argv matrix and record rc/stdout/stderr (for example, ['--out','--numbered'], ['--num','x.srt'], ['--numbered=x','x.srt'], ['-hx'], ['--bogus','-h']).
 - pathlib is not Rust Path: `Path.stem` behaves like os.path.splitext on the name ("foo." -> "foo", "a..b" -> "a.", ".hidden" and "..." keep the whole name) and `Path()` strips trailing separators; on Windows, Win32 itself normalizes trailing dots and spaces in file names and both languages inherit that. Freeze name-derived output paths with a fixture table.
 - stdout text is platform-dependent in Python: on Windows the piped stdout is encoded with the ANSI codepage (0xEB for "u-umlaut" on the test machine) and text-mode writes translate \n to \r\n, while Rust writes UTF-8 with LF. File outputs stayed byte-identical in this port; if stdout byte parity matters, replicate the codepage logic, otherwise document the deviation and normalize only message streams in the differential harness.
 
@@ -153,7 +153,7 @@ Treat argv edge cases, exit codes, path derivation and stdout encoding as part o
 
 - A Python script runs under python.exe (console subsystem), so a console exists and interactive output plus shell waiting just work. A Rust exe can be console or GUI subsystem, and the choice is user-visible: GUI subsystem with `#![cfg_attr(windows, windows_subsystem = "windows")]` guarantees no console window is ever allocated when a GUI app spawns it (no flash), but interactive cmd/PowerShell no longer wait for it and stdout goes nowhere unless a parent provided handles.
 - Keep both behaviors: when the inherited stdout/stderr handles are invalid, attach to the parent console (AttachConsole(ATTACH_PARENT_PROCESS), CreateFileW("CONOUT$"), SetStdHandle) before any print; when they are valid (pipe or file from the caller), leave them alone so capture keeps working.
-- Measured on the shipped exe: PE subsystem 2 (GUI); DETACHED_PROCESS with DEVNULL handles exits 0 and still writes its output file; cmd /c redirection, Start-Process -RedirectStandardOutput and Python subprocess all capture rc/stdout/files exactly.
+- Measured on a GUI-subsystem exe: PE subsystem 2 (GUI); DETACHED_PROCESS with DEVNULL handles exits 0 and still writes its output file; cmd /c redirection, Start-Process -RedirectStandardOutput and Python subprocess all capture rc/stdout/files exactly.
 
 ### Rule
 Pick the subsystem from the deployment requirement (window suppression vs shell waiting), rebind only invalid console handles, and verify with a no-console spawn test plus a redirected-handle capture test.

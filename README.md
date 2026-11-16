@@ -1,7 +1,7 @@
 # QR code
 
 An agent skill that turns short text or a UTF-8 file into a scannable QR code. By default the code is printed to the terminal and nothing is written to disk; `--save` writes a PNG, with an optional viewer page sized for scanning from a phone screen.
-The generator is a native binary: a Windows console executable and a statically linked Linux x86_64 binary ship in the repository, so the host needs no interpreter, package manager or network access. Error correction is fixed at level M, every symbol is a regular QR code, and the viewer page never contains the encoded text.
+The generator is a native binary: Windows and Linux builds for x86_64 and ARM64, and a macOS ARM64 build, ship in the repository, so the host needs no interpreter, package manager or network access. Error correction is fixed at level M, every symbol is a regular QR code, and the viewer page never contains the encoded text.
 
 ## Flow
 
@@ -59,7 +59,8 @@ git clone https://github.com/chezhenkie/qr-code-skill.git
 | OMP | `~/.omp/agent/skills` | `.omp/skills` |
 
 ```powershell
-Copy-Item -Recurse .\agent-skill\SKILL.md, .\agent-skill\bin "$HOME\.config\opencode\skills\qr"
+New-Item -ItemType Directory -Force "$HOME\.config\opencode\skills\qr" | Out-Null
+Copy-Item -Recurse -Force .\agent-skill\SKILL.md, .\agent-skill\bin "$HOME\.config\opencode\skills\qr"
 ```
 
 ```sh
@@ -67,7 +68,7 @@ mkdir -p ~/.config/opencode/skills/qr
 cp -r agent-skill/SKILL.md agent-skill/bin ~/.config/opencode/skills/qr
 ```
 
-`~` is your home directory; if the shell does not expand it, use the full path. The [v1.1.0 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.1.0) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
+`~` is your home directory; if the shell does not expand it, use the full path. The [v1.1.1 release](https://github.com/chezhenkie/qr-code-skill/releases/tag/v1.1.1) carries the same files as one archive per platform. Restart the agent if the skill does not appear.
 
 ## Use
 
@@ -96,7 +97,7 @@ Direct use, from the repository root:
 ./agent-skill/bin/qr "https://example.com"
 ```
 
-The default mode prints the symbol and exits 0. In save mode the run prints the absolute path of the PNG on stdout, and with `--html` the page path after it. Arguments are checked before a file is written. A filesystem failure prints one `FAIL read:` or `FAIL write:` line and exits 1; text beyond the capacity at level M prints one `FAIL store:` line and leaves no file; a usage error prints the help text and exits 2.
+The default mode prints the symbol and exits 0. In save mode the run prints the absolute path of the PNG on stdout, and with `--html` the page path after it. Arguments are checked before a file is written. A filesystem failure prints one `FAIL read:` or `FAIL write:` line and exits 1; text beyond the capacity at level M prints one `FAIL store:` line and writes nothing; a usage error prints the usage line and one `error:` line and exits 2.
 
 ## Show on screen
 
@@ -132,11 +133,11 @@ The output is UTF-8 text with a colour prefix and needs a monospaced terminal. K
 | `--scale SCALE` | Pixels per module, 1 to 100; implies `--save` | 10 |
 | `--border BORDER` | Quiet zone in modules, 0 to 16; both modes | 4 |
 | `--html` | Write a viewer page beside the PNG; implies `--save` | off |
-| `--title TITLE` | Caption on the viewer page; implies `--save` | none |
+| `--title TITLE` | Caption on the viewer page; implies `--save` | `qr code` |
 | `-h, --help` | Print the usage text | |
 | `--version` | Print the version | |
 
-Text and file input are stripped of surrounding whitespace before encoding.
+File input is stripped of surrounding whitespace before encoding; text is encoded as given.
 In save mode the PNG is written by the tool itself as a 1-bit greyscale image, then the header is checked against the symbol size and the closing chunk is required; a mismatch removes the file and exits 1, so a printed path points at a complete image of the intended module count. The page loads that image by file name, scales it to 70vmin of the shorter viewport side, and carries a viewport tag so the size holds on a phone.
 
 ## Cleanup

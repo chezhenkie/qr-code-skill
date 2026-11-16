@@ -92,7 +92,7 @@ Terminal rendering is one column per module plus the quiet zone, so the window m
 
 ## Verification
 
-The binary performs a structural check itself in save mode. For a full decode check on a development machine, with the optional `zxing-cpp` package installed:
+The binary performs a structural check itself in save mode. For a full decode check on a development machine, with the optional `zxing-cpp` and Pillow packages installed:
 
 ```powershell
 python -c "import sys, zxingcpp; from PIL import Image; r = zxingcpp.read_barcode(Image.open(sys.argv[1])); print(r.text if r else 'NO-DECODE')" .\qr\out.png
