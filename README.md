@@ -20,25 +20,6 @@ Click a sample to open the full-size image.
 
 Both samples come from `agent-skill/bin/qr.exe --save "https://example.com" -o docs/demo-qr.png --scale 10 --html --title "Scan with the phone camera"`. The caption is a page title and never part of the code.
 
-## Files
-
-| File | Purpose |
-|---|---|
-| `agent-skill/SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
-| `agent-skill/bin/qr.exe` | Windows x86_64 console binary |
-| `agent-skill/bin/qr-arm64.exe` | Windows ARM64 console binary |
-| `agent-skill/bin/qr` | Linux x86_64 binary, statically linked |
-| `agent-skill/bin/qr-arm64` | Linux ARM64 binary, statically linked |
-| `agent-skill/bin/qr-macos-arm64` | macOS ARM64 binary |
-| `rust-src/` | The crate: command line, encoder, PNG writer, terminal renderer, viewer template |
-| `tools/gate.py` | 56-check acceptance gate over the shipped binary |
-| `tools/argv_matrix.py` | 33-case command-line harness against the frozen fixture |
-| `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
-| `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
-| `docs/` | Process manuals and the sample images |
-| `CHANGELOG.md` | Version history |
-| `REQUIREMENTS.md` | Host, runtime, scanning and build requirements |
-
 ## Requirements
 
 Any supported host runs the binary with no interpreter, package manager, network access or configuration file; the skill is a folder copy. The generator needs a writable path only when saving, and the terminal display needs a monospaced window wider than the symbol. Checking the repository needs Python 3.14 with Pillow, zxing-cpp and segno; the full list is in [REQUIREMENTS.md](REQUIREMENTS.md).
@@ -152,7 +133,26 @@ Remove-Item .\qr\out.png, .\qr\out.html
 rm qr/out.png qr/out.html
 ```
 
-Deletion is a manual step; nothing removes the files later. A payload over capacity writes nothing, a failed write or PNG check removes the PNG, and a failed page write leaves the PNG so the run can be retried. Delete a secret as soon as the scan is confirmed, without copying it elsewhere first.
+Deletion is a manual step; nothing removes the files later. A payload over capacity writes nothing, a failed write or PNG check removes the temporary file and keeps any earlier image, and a failed page write leaves the PNG so the run can be retried. Delete a secret as soon as the scan is confirmed, without copying it elsewhere first.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `agent-skill/SKILL.md` | Agent entry point: contract, flags, placement and decode recipe |
+| `agent-skill/bin/qr.exe` | Windows x86_64 console binary |
+| `agent-skill/bin/qr-arm64.exe` | Windows ARM64 console binary |
+| `agent-skill/bin/qr` | Linux x86_64 binary, statically linked |
+| `agent-skill/bin/qr-arm64` | Linux ARM64 binary, statically linked |
+| `agent-skill/bin/qr-macos-arm64` | macOS ARM64 binary |
+| `rust-src/` | The crate: command line, encoder, PNG writer, terminal renderer, viewer template |
+| `tools/gate.py` | 56-check acceptance gate over the shipped binary |
+| `tools/argv_matrix.py` | 33-case command-line harness against the frozen fixture |
+| `tools/parity.py` | Symbol parity against segno over `spec/corpus.txt` |
+| `spec/` | Behaviour contract, frozen command-line fixture, parity corpus |
+| `docs/` | Process manuals and the sample images |
+| `CHANGELOG.md` | Version history |
+| `REQUIREMENTS.md` | Host, runtime, scanning and build requirements |
 
 ## Check
 
